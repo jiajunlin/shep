@@ -1,3 +1,10 @@
+# [1.175.0](https://github.com/shep-ai/shep/compare/v1.174.0...v1.175.0) (2026-04-06)
+
+
+### Features
+
+* **domain:** add unified remote repository support with auto-fork ([#531](https://github.com/shep-ai/shep/issues/531)) ([64b8dfe](https://github.com/shep-ai/shep/commit/64b8dfe42022aa94bb49af2e7781b01a38e3afab)), closes [#409](https://github.com/shep-ai/shep/issues/409) [#430](https://github.com/shep-ai/shep/issues/430) [#434](https://github.com/shep-ai/shep/issues/434) [#525](https://github.com/shep-ai/shep/issues/525)
+
 # [1.174.0](https://github.com/shep-ai/shep/compare/v1.173.0...v1.174.0) (2026-04-05)
 
 
