@@ -1,3 +1,10 @@
+# [1.178.0](https://github.com/shep-ai/shep/compare/v1.177.0...v1.178.0) (2026-04-07)
+
+
+### Features
+
+* **web:** workspaces prototype with new-project flow ([#540](https://github.com/shep-ai/shep/issues/540)) ([9759c84](https://github.com/shep-ai/shep/commit/9759c84b407342f2b3a00eaf68a640fbeb4eff08))
+
 # [1.177.0](https://github.com/shep-ai/shep/compare/v1.176.0...v1.177.0) (2026-04-07)
 
 
