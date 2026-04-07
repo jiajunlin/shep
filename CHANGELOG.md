@@ -1,3 +1,11 @@
+# [1.177.0](https://github.com/shep-ai/shep/compare/v1.176.0...v1.177.0) (2026-04-07)
+
+
+### Features
+
+* **config:** package shep web ui as native desktop app using electron ([#530](https://github.com/shep-ai/shep/issues/530)) ([1ff9926](https://github.com/shep-ai/shep/commit/1ff99265bdeccd5e199967e664d5a188c3dd9af3))
+* **agents:** re-run agent on retry when validation exhausts repair attempts ([#533](https://github.com/shep-ai/shep/issues/533)) ([3cfa099](https://github.com/shep-ai/shep/commit/3cfa09939a1d2fc19ab72db22d3a235430e832cb))
+
 # [1.176.0](https://github.com/shep-ai/shep/compare/v1.175.1...v1.176.0) (2026-04-06)
 
 
