@@ -1,3 +1,10 @@
+## [1.178.1](https://github.com/shep-ai/shep/compare/v1.178.0...v1.178.1) (2026-04-09)
+
+
+### Bug Fixes
+
+* **domain:** fix local squash merge conflict handling and stale state cleanup ([#532](https://github.com/shep-ai/shep/issues/532)) ([b57802e](https://github.com/shep-ai/shep/commit/b57802ef1a6584dca02777f002862a58c8440b04))
+
 # [1.178.0](https://github.com/shep-ai/shep/compare/v1.177.0...v1.178.0) (2026-04-07)
 
 
