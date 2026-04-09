@@ -1,3 +1,10 @@
+## [1.179.1](https://github.com/shep-ai/shep/compare/v1.179.0...v1.179.1) (2026-04-09)
+
+
+### Bug Fixes
+
+* **web:** share dev server state across nodes and drawers ([#542](https://github.com/shep-ai/shep/issues/542)) ([5e2344d](https://github.com/shep-ai/shep/commit/5e2344d6136d81d2dc732bd1bcdf97b60afb0950))
+
 # [1.179.0](https://github.com/shep-ai/shep/compare/v1.178.1...v1.179.0) (2026-04-09)
 
 
