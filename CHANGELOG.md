@@ -1,3 +1,10 @@
+# [1.179.0](https://github.com/shep-ai/shep/compare/v1.178.1...v1.179.0) (2026-04-09)
+
+
+### Features
+
+* **web:** update pr branding footer to markdown format ([#543](https://github.com/shep-ai/shep/issues/543)) ([4c06d02](https://github.com/shep-ai/shep/commit/4c06d02d27411438e00b903dd247555d714fc134))
+
 ## [1.178.1](https://github.com/shep-ai/shep/compare/v1.178.0...v1.178.1) (2026-04-09)
 
 
