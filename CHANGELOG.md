@@ -1,3 +1,10 @@
+# [1.180.0](https://github.com/shep-ai/shep/compare/v1.179.1...v1.180.0) (2026-04-10)
+
+
+### Features
+
+* **web:** add application entity with canvas node and full-page view ([#536](https://github.com/shep-ai/shep/issues/536)) ([95317a9](https://github.com/shep-ai/shep/commit/95317a9e735463adae4b2e4f334da3df708d9ee8))
+
 ## [1.179.1](https://github.com/shep-ai/shep/compare/v1.179.0...v1.179.1) (2026-04-09)
 
 
