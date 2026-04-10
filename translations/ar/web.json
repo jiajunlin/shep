@@ -409,7 +409,8 @@
     "newFeature": "ميزة جديدة",
     "localFolder": "مجلد محلي",
     "adoptBranch": "تبني فرع",
-    "fromGithub": "من GitHub"
+    "fromGithub": "من GitHub",
+    "newApplication": "تطبيق جديد"
   },
   "chat": {
     "shepChat": "محادثة Shep",

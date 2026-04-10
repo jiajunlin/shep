@@ -93,6 +93,7 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     handleStopFeature,
     handleUnarchiveFeature,
     handleDeleteRepository,
+    handleDeleteApplication,
     createFeatureNode,
     showArchived,
     setShowArchived,
@@ -176,6 +177,13 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
   }, [sidebarKey, featureNodes, setSidebarFeatures]);
 
   // ── URL-based navigation handlers ────────────────────────────────────
+
+  const handleApplicationClick = useCallback(
+    (applicationId: string) => {
+      guardedNavigate(() => router.push(`/application/${applicationId}`));
+    },
+    [router, guardedNavigate]
+  );
 
   const handleNodeClick = useCallback(
     (event: React.MouseEvent, node: CanvasNodeType) => {
@@ -331,6 +339,8 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
       onRepositoryAdd: handleAddFeatureToRepo,
       onRepositoryClick: handleRepositoryClick,
       onRepositoryDelete: handleDeleteRepository,
+      onApplicationClick: handleApplicationClick,
+      onApplicationDelete: handleDeleteApplication,
     });
   }, [
     setCallbacks,
@@ -344,6 +354,8 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     handleAddFeatureToRepo,
     handleRepositoryClick,
     handleDeleteRepository,
+    handleApplicationClick,
+    handleDeleteApplication,
   ]);
 
   const handleMoveEnd = useCallback(
@@ -354,6 +366,11 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
   );
 
   const hasRepositories = nodes.some((n) => n.type === 'repositoryNode');
+  // The canvas is "non-empty" as soon as ANY repo OR application node is
+  // present — applications are first-class top-level nodes, so creating
+  // an application alone must be enough to keep the prompt empty state
+  // from re-appearing on next visit.
+  const hasCanvasContent = hasRepositories || nodes.some((n) => n.type === 'applicationNode');
 
   // Publish repo state to sidebar context so AppShell can hide FAB during onboarding
   useEffect(() => {
@@ -361,22 +378,22 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
   }, [hasRepositories, setSidebarHasRepos]);
 
   // Debounced latch: prevent empty-state flicker during brief reconcile gaps
-  // (e.g. stale poll momentarily drops repos), but allow the empty state to
-  // return after a real delete once repos stay gone past the debounce window.
-  const [showCanvas, setShowCanvas] = useState(hasRepositories);
+  // (e.g. stale poll momentarily drops nodes), but allow the empty state to
+  // return after a real delete once content stays gone past the debounce window.
+  const [showCanvas, setShowCanvas] = useState(hasCanvasContent);
   const latchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (hasRepositories) {
-      // Repos exist — show canvas immediately, cancel any pending unlatch
+    if (hasCanvasContent) {
+      // Repos / apps exist — show canvas immediately, cancel any pending unlatch
       if (latchTimerRef.current) {
         clearTimeout(latchTimerRef.current);
         latchTimerRef.current = null;
       }
       setShowCanvas(true);
     } else if (showCanvas) {
-      // Repos gone — clear saved viewport so next add starts centered,
-      // then wait before showing empty state (debounce stale polls)
+      // All canvas content gone — clear saved viewport so next add starts
+      // centered, then wait before showing empty state (debounce stale polls)
       resetViewport();
       latchTimerRef.current = setTimeout(() => {
         setShowCanvas(false);
@@ -386,7 +403,7 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     return () => {
       if (latchTimerRef.current) clearTimeout(latchTimerRef.current);
     };
-  }, [hasRepositories, showCanvas, resetViewport]);
+  }, [hasCanvasContent, showCanvas, resetViewport]);
 
   // Auto-include any newly-appearing repo/feature nodes in the active
   // workspace (skipped when default is active — that workspace shows
@@ -457,13 +474,13 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     fitView,
   });
 
-  // When the active (non-default) workspace has no members but real repos
-  // exist on the canvas, show a workspace-aware empty state instead of the
-  // welcome wizard. The wizard would imply "no repos at all", which is wrong
-  // here — and crucially, leaves the workspace selector visible via the
-  // toolbar so users can switch back to the default workspace.
+  // When the active (non-default) workspace has no members but real canvas
+  // content (repos or applications) exists, show a workspace-aware empty
+  // state instead of the welcome wizard. The wizard would imply "no nodes
+  // at all", which is wrong here — and crucially, leaves the workspace
+  // selector visible via the toolbar so users can switch back to default.
   const workspaceFilteredEmpty =
-    hasRepositories && !isDefaultActive && workspaceFilteredNodes.length === 0;
+    hasCanvasContent && !isDefaultActive && workspaceFilteredNodes.length === 0;
 
   const emptyStateNode = workspaceFilteredEmpty ? (
     <div className="pointer-events-auto flex h-full w-full flex-col items-center justify-center px-8">
@@ -496,8 +513,16 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
       </div>
     </div>
   ) : (
-    <ControlCenterEmptyState onRepositorySelect={addRepoAndFocus} />
+    <ControlCenterEmptyState
+      onRepositorySelect={addRepoAndFocus}
+      onApplicationCreated={(appId) => {
+        router.push(`/application/${appId}`);
+      }}
+    />
   );
+
+  // ── Full-screen create prompt overlay ────────────────────────────────
+  const [showCreatePrompt, setShowCreatePrompt] = useState(false);
 
   const featureFlags = useFeatureFlags();
 
@@ -509,6 +534,7 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     guardedNavigate,
     handlePickFolder,
     onNewProject: () => setWorkspaceNewProjectOpen(true),
+    onNewApplication: () => setShowCreatePrompt(true),
     featureFlags,
   });
 
@@ -617,6 +643,24 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Full-screen create prompt overlay (replaces the old dialog) */}
+      {showCreatePrompt ? (
+        <div className="absolute inset-0 z-50">
+          <ControlCenterEmptyState
+            onRepositorySelect={(path) => {
+              setShowCreatePrompt(false);
+              addRepoAndFocus(path);
+            }}
+            onApplicationCreated={(appId) => {
+              setShowCreatePrompt(false);
+              router.push(`/application/${appId}`);
+            }}
+            onClose={() => setShowCreatePrompt(false)}
+            className="bg-background"
+          />
+        </div>
+      ) : null}
     </>
   );
 }

@@ -409,7 +409,8 @@
     "newFeature": "New Feature",
     "localFolder": "Local Folder",
     "adoptBranch": "Adopt Branch",
-    "fromGithub": "From GitHub"
+    "fromGithub": "From GitHub",
+    "newApplication": "New Application"
   },
   "chat": {
     "shepChat": "Shep Chat",

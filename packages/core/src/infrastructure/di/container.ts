@@ -22,6 +22,8 @@ import type { IFeatureRepository } from '../../application/ports/output/reposito
 import { SQLiteFeatureRepository } from '../repositories/sqlite-feature.repository.js';
 import type { IRepositoryRepository } from '../../application/ports/output/repositories/repository-repository.interface.js';
 import { SQLiteRepositoryRepository } from '../repositories/sqlite-repository.repository.js';
+import type { IApplicationRepository } from '../../application/ports/output/repositories/application-repository.interface.js';
+import { SQLiteApplicationRepository } from '../repositories/sqlite-application.repository.js';
 
 // Validator interfaces and implementations
 import type { IAgentValidator } from '../../application/ports/output/agents/agent-validator.interface.js';
@@ -38,8 +40,12 @@ import type { IWorktreeService } from '../../application/ports/output/services/w
 import { WorktreeService } from '../services/git/worktree.service.js';
 import type { IFileSystemService } from '../../application/ports/output/services/file-system-service.interface.js';
 import { FileSystemService } from '../services/file-system.service.js';
+import type { IApplicationBriefStore } from '../../application/ports/output/services/application-brief-store.interface.js';
+import { ApplicationBriefStore } from '../services/filesystem/application-brief.store.js';
 import type { IProjectScaffoldService } from '../../application/ports/output/services/project-scaffold-service.interface.js';
 import { FsProjectScaffoldService } from '../services/project-scaffold/fs-project-scaffold.service.js';
+import type { IApplicationCreationPromptBuilder } from '../../application/ports/output/services/application-creation-prompt-builder.interface.js';
+import { ApplicationCreationPromptBuilder } from '../services/agents/application-creation/application-creation-prompt.builder.js';
 import type { IAgentAuthDetectorService } from '../../application/ports/output/services/agent-auth-detector.interface.js';
 import { PlatformAgentAuthDetectorService } from '../services/agent-auth-detector/platform-agent-auth-detector.service.js';
 import type { IToolInstallerService } from '../../application/ports/output/services/tool-installer.service.js';
@@ -63,6 +69,16 @@ import type { IGitHubRepositoryService } from '../../application/ports/output/se
 import { GitHubRepositoryService } from '../services/external/github-repository.service.js';
 import type { IBrowserOpener } from '../../application/ports/output/services/i-browser-opener.js';
 import { BrowserOpenerService } from '../services/browser-opener.service.js';
+import type { ITerminalSessionService } from '../../application/ports/output/services/terminal-session-service.interface.js';
+import { PtyTerminalSessionService } from '../services/terminal/pty-terminal-session.service.js';
+import { CreateTerminalSessionUseCase } from '../../application/use-cases/terminal/create-terminal-session.use-case.js';
+import type { IApplicationFileSystemService } from '../../application/ports/output/services/application-file-system-service.interface.js';
+import { NodeApplicationFileSystemService } from '../services/filesystem/node-application-file-system.service.js';
+import { ListApplicationFilesUseCase } from '../../application/use-cases/applications/list-application-files.use-case.js';
+import { ReadApplicationFileUseCase } from '../../application/use-cases/applications/read-application-file.use-case.js';
+import { ReadApplicationFileRawUseCase } from '../../application/use-cases/applications/read-application-file-raw.use-case.js';
+import { WriteApplicationFileUseCase } from '../../application/use-cases/applications/write-application-file.use-case.js';
+import { WatchApplicationFilesUseCase } from '../../application/use-cases/applications/watch-application-files.use-case.js';
 
 // Agent infrastructure interfaces and implementations
 import type { IAgentExecutorFactory } from '../../application/ports/output/agents/agent-executor-factory.interface.js';
@@ -145,6 +161,11 @@ import { RebaseFeatureOnMainUseCase } from '../../application/use-cases/features
 import { GetBranchSyncStatusUseCase } from '../../application/use-cases/features/get-branch-sync-status.use-case.js';
 import { ConflictResolutionService } from '../services/agents/conflict-resolution/conflict-resolution.service.js';
 import { AutoResolveMergedBranchesUseCase } from '../../application/use-cases/features/auto-resolve-merged-branches.use-case.js';
+import { CreateApplicationUseCase } from '../../application/use-cases/applications/create-application.use-case.js';
+import { ListApplicationsUseCase } from '../../application/use-cases/applications/list-applications.use-case.js';
+import { GetApplicationUseCase } from '../../application/use-cases/applications/get-application.use-case.js';
+import { DeleteApplicationUseCase } from '../../application/use-cases/applications/delete-application.use-case.js';
+import { UpdateApplicationUseCase } from '../../application/use-cases/applications/update-application.use-case.js';
 
 // Deployment use cases
 import { StartFeatureDeploymentUseCase } from '../../application/use-cases/deployments/start-feature-deployment.use-case.js';
@@ -177,10 +198,13 @@ import { runSQLiteMigrations } from '../persistence/sqlite/migrations.js';
 import type { IInteractiveSessionRepository } from '../../application/ports/output/repositories/interactive-session-repository.interface.js';
 import type { IInteractiveMessageRepository } from '../../application/ports/output/repositories/interactive-message-repository.interface.js';
 import type { IInteractiveSessionService } from '../../application/ports/output/services/interactive-session-service.interface.js';
+import type { IWorkflowStepRepository } from '../../application/ports/output/repositories/workflow-step-repository.interface.js';
 import { SQLiteInteractiveSessionRepository } from '../repositories/sqlite-interactive-session.repository.js';
 import { SQLiteInteractiveMessageRepository } from '../repositories/sqlite-interactive-message.repository.js';
+import { SQLiteWorkflowStepRepository } from '../repositories/sqlite-workflow-step.repository.js';
 import { InteractiveSessionService } from '../services/interactive/interactive-session.service.js';
 import { FeatureContextBuilder } from '../services/interactive/feature-context.builder.js';
+import { RunWorkflowUseCase } from '../../application/use-cases/workflows/run-workflow.use-case.js';
 
 let _initialized = false;
 
@@ -227,6 +251,13 @@ export async function initializeContainer(): Promise<typeof container> {
     },
   });
 
+  container.register<IApplicationRepository>('IApplicationRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteApplicationRepository(database);
+    },
+  });
+
   // Register external dependencies as tokens
   // On Windows, agent CLIs ship as .cmd/.ps1 scripts (e.g. cursor's `agent.cmd`).
   // execFile without shell: true cannot resolve .cmd extensions, causing ENOENT.
@@ -265,9 +296,17 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.registerSingleton<IWorktreeService>('IWorktreeService', WorktreeService);
   container.registerSingleton<IFileSystemService>('IFileSystemService', FileSystemService);
+  container.registerSingleton<IApplicationBriefStore>(
+    'IApplicationBriefStore',
+    ApplicationBriefStore
+  );
   container.registerSingleton<IProjectScaffoldService>(
     'IProjectScaffoldService',
     FsProjectScaffoldService
+  );
+  container.registerSingleton<IApplicationCreationPromptBuilder>(
+    'IApplicationCreationPromptBuilder',
+    ApplicationCreationPromptBuilder
   );
   container.registerSingleton<IAgentAuthDetectorService>(
     'IAgentAuthDetectorService',
@@ -289,6 +328,14 @@ export async function initializeContainer(): Promise<typeof container> {
     JsonDrivenIdeLauncherService
   );
   container.registerSingleton<IDaemonService>('IDaemonService', DaemonPidService);
+  container.registerSingleton<IApplicationFileSystemService>(
+    'IApplicationFileSystemService',
+    NodeApplicationFileSystemService
+  );
+  container.registerSingleton<ITerminalSessionService>(
+    'ITerminalSessionService',
+    PtyTerminalSessionService
+  );
   container.registerSingleton(AttachmentStorageService);
   container.register('AttachmentStorageService', { useToken: AttachmentStorageService });
   const deploymentService = new DeploymentService();
@@ -432,6 +479,12 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(ListToolsUseCase);
   container.registerSingleton(LaunchToolUseCase);
   container.registerSingleton(LaunchIdeUseCase);
+  container.registerSingleton(CreateTerminalSessionUseCase);
+  container.registerSingleton(ListApplicationFilesUseCase);
+  container.registerSingleton(ReadApplicationFileUseCase);
+  container.registerSingleton(ReadApplicationFileRawUseCase);
+  container.registerSingleton(WriteApplicationFileUseCase);
+  container.registerSingleton(WatchApplicationFilesUseCase);
   container.registerSingleton(AddRepositoryUseCase);
   container.registerSingleton(CreateProjectUseCase);
   container.registerSingleton(CheckAgentAuthUseCase);
@@ -458,6 +511,11 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(RebaseFeatureOnMainUseCase);
   container.registerSingleton(GetBranchSyncStatusUseCase);
   container.registerSingleton(AutoResolveMergedBranchesUseCase);
+  container.registerSingleton(CreateApplicationUseCase);
+  container.registerSingleton(ListApplicationsUseCase);
+  container.registerSingleton(GetApplicationUseCase);
+  container.registerSingleton(DeleteApplicationUseCase);
+  container.registerSingleton(UpdateApplicationUseCase);
 
   // Deployment use cases
   container.registerSingleton(StartFeatureDeploymentUseCase);
@@ -627,6 +685,39 @@ export async function initializeContainer(): Promise<typeof container> {
   container.register('AutoResolveMergedBranchesUseCase', {
     useFactory: (c) => c.resolve(AutoResolveMergedBranchesUseCase),
   });
+  container.register('CreateApplicationUseCase', {
+    useFactory: (c) => c.resolve(CreateApplicationUseCase),
+  });
+  container.register('ListApplicationsUseCase', {
+    useFactory: (c) => c.resolve(ListApplicationsUseCase),
+  });
+  container.register('GetApplicationUseCase', {
+    useFactory: (c) => c.resolve(GetApplicationUseCase),
+  });
+  container.register('DeleteApplicationUseCase', {
+    useFactory: (c) => c.resolve(DeleteApplicationUseCase),
+  });
+  container.register('UpdateApplicationUseCase', {
+    useFactory: (c) => c.resolve(UpdateApplicationUseCase),
+  });
+  container.register('ListApplicationFilesUseCase', {
+    useFactory: (c) => c.resolve(ListApplicationFilesUseCase),
+  });
+  container.register('ReadApplicationFileUseCase', {
+    useFactory: (c) => c.resolve(ReadApplicationFileUseCase),
+  });
+  container.register('ReadApplicationFileRawUseCase', {
+    useFactory: (c) => c.resolve(ReadApplicationFileRawUseCase),
+  });
+  container.register('WriteApplicationFileUseCase', {
+    useFactory: (c) => c.resolve(WriteApplicationFileUseCase),
+  });
+  container.register('WatchApplicationFilesUseCase', {
+    useFactory: (c) => c.resolve(WatchApplicationFilesUseCase),
+  });
+  container.register('CreateTerminalSessionUseCase', {
+    useFactory: (c) => c.resolve(CreateTerminalSessionUseCase),
+  });
 
   // Register interactive session infrastructure
   container.register<IInteractiveSessionRepository>('IInteractiveSessionRepository', {
@@ -643,6 +734,27 @@ export async function initializeContainer(): Promise<typeof container> {
     },
   });
 
+  container.register<IWorkflowStepRepository>('IWorkflowStepRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteWorkflowStepRepository(database);
+    },
+  });
+
+  // Boot-time recovery: any step left in `running` by a previous
+  // daemon is orphaned. Flip it to `interrupted` BEFORE any session
+  // can resolve so the UI never shows phantom "in-progress" state
+  // from a dead process.
+  const workflowStepRepoBoot =
+    container.resolve<IWorkflowStepRepository>('IWorkflowStepRepository');
+  const interruptedCount = await workflowStepRepoBoot.markAllRunningAsInterrupted();
+  if (interruptedCount > 0) {
+    // eslint-disable-next-line no-console
+    console.log(
+      `[workflow-step-recovery] marked ${interruptedCount} orphaned running step(s) as interrupted`
+    );
+  }
+
   const interactiveSessionRepo = container.resolve<IInteractiveSessionRepository>(
     'IInteractiveSessionRepository'
   );
@@ -654,7 +766,8 @@ export async function initializeContainer(): Promise<typeof container> {
     interactiveMessageRepo,
     container.resolve<IAgentExecutorFactory>('IAgentExecutorFactory'),
     container.resolve<IFeatureRepository>('IFeatureRepository'),
-    new FeatureContextBuilder()
+    new FeatureContextBuilder(),
+    workflowStepRepoBoot
   );
   container.registerInstance<IInteractiveSessionService>(
     'IInteractiveSessionService',
@@ -684,6 +797,11 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.register('RespondToInteractionUseCase', {
     useFactory: (c) => c.resolve(RespondToInteractionUseCase),
+  });
+
+  container.registerSingleton(RunWorkflowUseCase);
+  container.register('RunWorkflowUseCase', {
+    useFactory: (c) => c.resolve(RunWorkflowUseCase),
   });
 
   // Startup cleanup: mark any zombie sessions (booting/ready from a prior server run) as stopped

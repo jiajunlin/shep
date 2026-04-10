@@ -409,7 +409,8 @@
     "newFeature": "Новая функция",
     "localFolder": "Локальная папка",
     "adoptBranch": "Принять ветку",
-    "fromGithub": "Из GitHub"
+    "fromGithub": "Из GitHub",
+    "newApplication": "Новое приложение"
   },
   "chat": {
     "shepChat": "Shep Чат",

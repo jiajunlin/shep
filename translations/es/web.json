@@ -409,7 +409,8 @@
     "newFeature": "Nueva función",
     "localFolder": "Carpeta local",
     "adoptBranch": "Adoptar rama",
-    "fromGithub": "Desde GitHub"
+    "fromGithub": "Desde GitHub",
+    "newApplication": "Nueva Aplicación"
   },
   "chat": {
     "shepChat": "Shep Chat",

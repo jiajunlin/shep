@@ -409,7 +409,8 @@
     "newFeature": "פיצ'ר חדש",
     "localFolder": "תיקייה מקומית",
     "adoptBranch": "אימוץ ענף",
-    "fromGithub": "מ-GitHub"
+    "fromGithub": "מ-GitHub",
+    "newApplication": "אפליקציה חדשה"
   },
   "chat": {
     "shepChat": "צ'אט Shep",
