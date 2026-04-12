@@ -1,3 +1,10 @@
+# [1.181.0](https://github.com/shep-ai/shep/compare/v1.180.0...v1.181.0) (2026-04-12)
+
+
+### Features
+
+* **config:** simplify github issue templates for easier bug reporting ([#547](https://github.com/shep-ai/shep/issues/547)) ([a577725](https://github.com/shep-ai/shep/commit/a577725b1e3864bb69f11f9896da53abbc446886))
+
 # [1.180.0](https://github.com/shep-ai/shep/compare/v1.179.1...v1.180.0) (2026-04-10)
 
 
