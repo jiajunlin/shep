@@ -1,3 +1,10 @@
+## [1.182.1](https://github.com/shep-ai/shep/compare/v1.182.0...v1.182.1) (2026-04-13)
+
+
+### Bug Fixes
+
+* **api:** handle existing clone destination and upstream remote during github repo import ([#551](https://github.com/shep-ai/shep/issues/551)) ([e6e1577](https://github.com/shep-ai/shep/commit/e6e1577bb9eecf6fcfe977908737d78e738b9b04)), closes [#545](https://github.com/shep-ai/shep/issues/545)
+
 # [1.182.0](https://github.com/shep-ai/shep/compare/v1.181.0...v1.182.0) (2026-04-12)
 
 
