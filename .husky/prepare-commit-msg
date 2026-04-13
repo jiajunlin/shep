@@ -8,11 +8,17 @@
 COMMIT_MSG_FILE="$1"
 SHEP_TRAILER="Co-Authored-By: Shep Bot <shep-agent@users.noreply.github.com>"
 
-# Strip any Claude co-author trailers (case-insensitive)
-sed -i '' -E '/^[Cc]o-[Aa]uthored-[Bb]y:[[:space:]]*Claude.*<noreply@anthropic\.com>/d' "$COMMIT_MSG_FILE"
+# Cross-platform in-place sed — GNU sed uses `-i`, BSD/macOS sed needs `-i ''`.
+# Use a temp file fallback that works on both flavors.
+sed_inplace() {
+  _expr="$1"
+  _file="$2"
+  _tmp="$(mktemp)"
+  sed -E "$_expr" "$_file" > "$_tmp" && mv "$_tmp" "$_file"
+}
 
-# Remove any trailing blank lines left behind
-sed -i '' -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$COMMIT_MSG_FILE"
+# Strip any Claude co-author trailers (case-insensitive)
+sed_inplace '/^[Cc]o-[Aa]uthored-[Bb]y:[[:space:]]*Claude.*<noreply@anthropic\.com>/d' "$COMMIT_MSG_FILE"
 
 # Append Shep Bot co-author if not already present
 if ! grep -qF "$SHEP_TRAILER" "$COMMIT_MSG_FILE"; then
