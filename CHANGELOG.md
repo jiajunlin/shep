@@ -1,3 +1,10 @@
+# [1.185.0](https://github.com/shep-ai/shep/compare/v1.184.0...v1.185.0) (2026-04-14)
+
+
+### Features
+
+* **dx:** add discord badge to readme ([#553](https://github.com/shep-ai/shep/issues/553)) ([13cd39d](https://github.com/shep-ai/shep/commit/13cd39d3e119a37aa1a2ad96c6adc7fa048688e3))
+
 # [1.184.0](https://github.com/shep-ai/shep/compare/v1.183.0...v1.184.0) (2026-04-14)
 
 
