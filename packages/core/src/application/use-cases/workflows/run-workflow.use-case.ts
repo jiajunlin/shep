@@ -31,9 +31,21 @@
 import { injectable, inject } from 'tsyringe';
 import type { IWorkflowStepRepository } from '../../ports/output/repositories/workflow-step-repository.interface.js';
 import type { IInteractiveSessionService } from '../../ports/output/services/interactive-session-service.interface.js';
+import type { IInteractiveSessionRepository } from '../../ports/output/repositories/interactive-session-repository.interface.js';
 import type { SendInteractiveMessageUseCase } from '../interactive/send-interactive-message.use-case.js';
 import { WorkflowStepStatus, type WorkflowStep } from '../../../domain/generated/output.js';
 import type { WorkflowDefinition } from '../../workflows/application-creation.workflow.js';
+
+/** Per-step usage snapshot. All fields are cumulative session totals
+ *  captured BEFORE or AFTER a step runs; a diff between two snapshots
+ *  gives the usage attributable to that step alone. */
+interface UsageSnapshot {
+  costUsd: number;
+  inputTokens: number;
+  outputTokens: number;
+}
+
+const ZERO_USAGE: UsageSnapshot = { costUsd: 0, inputTokens: 0, outputTokens: 0 };
 
 export interface RunWorkflowInput {
   featureId: string;
@@ -63,6 +75,19 @@ export interface RunWorkflowInput {
    */
   model?: string;
   agentType?: string;
+  /**
+   * When true, the orchestrator SKIPS the step that would persist
+   * `visibleFirstMessage` as the user's first chat bubble — the
+   * caller has already written it to the DB in the foreground so
+   * the UI can render it instantly. The session still boots and
+   * the agent still receives the wrapped first-step prompt, but no
+   * second user message row is created.
+   *
+   * Used by `CreateApplicationUseCase.dispatchScaffoldAndWorkflow`
+   * so the user's bubble is visible from page load even though the
+   * scaffold + session boot run in the background.
+   */
+  firstUserMessageAlreadyPersisted?: boolean;
 }
 
 @injectable()
@@ -73,7 +98,9 @@ export class RunWorkflowUseCase {
     @inject('IInteractiveSessionService')
     private readonly session: IInteractiveSessionService,
     @inject('SendInteractiveMessageUseCase')
-    private readonly sendMessage: SendInteractiveMessageUseCase
+    private readonly sendMessage: SendInteractiveMessageUseCase,
+    @inject('IInteractiveSessionRepository')
+    private readonly sessionRepoForUsage: IInteractiveSessionRepository
   ) {}
 
   async execute(input: RunWorkflowInput): Promise<void> {
@@ -107,6 +134,11 @@ export class RunWorkflowUseCase {
       model: input.model,
       agentType: input.agentType,
       agentKickoffOverride: firstAgentPrompt,
+      // Skip the DB-persist step when the caller already wrote the
+      // user's first bubble in the foreground. The session still
+      // boots and sees `firstAgentPrompt`; we just don't create a
+      // duplicate row for `visibleFirstMessage`.
+      persistUserMessage: !input.firstUserMessageAlreadyPersisted,
     });
 
     // Resolve the session id — newly booted, so poll briefly.
@@ -142,10 +174,19 @@ export class RunWorkflowUseCase {
     this.session.notifyWorkflowStep(input.featureId, await this.refreshStep(firstStep.id));
     this.session.setActiveStep(input.featureId, firstStep.id);
 
+    // Usage baseline captured AFTER the first send has booted the
+    // session row (so the row exists and its counters are at zero
+    // for this fresh session). We diff this against the snapshot
+    // taken when the step finishes to attribute tokens + cost to
+    // this step alone.
+    const firstStepUsageBefore = await this.snapshotUsage(sessionId);
+
     try {
       await firstTurnDone;
+      const firstStepUsageAfter = await this.snapshotUsage(sessionId);
       await this.stepRepo.updateStatus(firstStep.id, WorkflowStepStatus.done, {
         summary: firstStepDef.title,
+        ...this.diffUsage(firstStepUsageBefore, firstStepUsageAfter),
       });
       this.session.notifyWorkflowStep(input.featureId, await this.refreshStep(firstStep.id));
     } catch (err) {
@@ -171,6 +212,7 @@ export class RunWorkflowUseCase {
       this.session.setActiveStep(input.featureId, step.id);
 
       const turnDone = this.session.waitForTurnDone(input.featureId);
+      const usageBefore = await this.snapshotUsage(sessionId);
 
       try {
         await this.sendMessage.execute({
@@ -182,8 +224,10 @@ export class RunWorkflowUseCase {
         });
         await turnDone;
 
+        const usageAfter = await this.snapshotUsage(sessionId);
         await this.stepRepo.updateStatus(step.id, WorkflowStepStatus.done, {
           summary: definition.title,
+          ...this.diffUsage(usageBefore, usageAfter),
         });
         this.session.notifyWorkflowStep(input.featureId, await this.refreshStep(step.id));
       } catch (err) {
@@ -211,6 +255,44 @@ export class RunWorkflowUseCase {
       await new Promise((r) => setTimeout(r, 50));
     }
     return null;
+  }
+
+  /**
+   * Capture the session's cumulative cost/token totals at a point
+   * in time. Returns zeros when the session row hasn't been written
+   * yet (first-ever boot) or when the repo call fails — usage is
+   * strictly informational, so we never let a missing snapshot break
+   * the workflow lifecycle.
+   */
+  private async snapshotUsage(sessionId: string): Promise<UsageSnapshot> {
+    try {
+      const usage = await this.sessionRepoForUsage.getUsage(sessionId);
+      if (!usage) return { ...ZERO_USAGE };
+      return {
+        costUsd: usage.totalCostUsd ?? 0,
+        inputTokens: usage.totalInputTokens ?? 0,
+        outputTokens: usage.totalOutputTokens ?? 0,
+      };
+    } catch {
+      return { ...ZERO_USAGE };
+    }
+  }
+
+  /**
+   * Diff two usage snapshots and return the values attributable to
+   * the step that ran between them. Negative diffs clamp to zero so
+   * a race between two session reads can never surface a negative
+   * cost in the UI.
+   */
+  private diffUsage(
+    before: UsageSnapshot,
+    after: UsageSnapshot
+  ): { costUsd: number; inputTokens: number; outputTokens: number } {
+    return {
+      costUsd: Math.max(0, after.costUsd - before.costUsd),
+      inputTokens: Math.max(0, after.inputTokens - before.inputTokens),
+      outputTokens: Math.max(0, after.outputTokens - before.outputTokens),
+    };
   }
 
   private async refreshStep(stepId: string): Promise<WorkflowStep> {
