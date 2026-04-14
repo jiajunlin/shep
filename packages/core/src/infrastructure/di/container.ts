@@ -14,6 +14,7 @@
 import 'reflect-metadata';
 import { container } from 'tsyringe';
 import type Database from 'better-sqlite3';
+import nodePath from 'node:path';
 
 // Repository interfaces and implementations
 import type { ISettingsRepository } from '../../application/ports/output/repositories/settings.repository.interface.js';
@@ -24,6 +25,56 @@ import type { IRepositoryRepository } from '../../application/ports/output/repos
 import { SQLiteRepositoryRepository } from '../repositories/sqlite-repository.repository.js';
 import type { IApplicationRepository } from '../../application/ports/output/repositories/application-repository.interface.js';
 import { SQLiteApplicationRepository } from '../repositories/sqlite-application.repository.js';
+import type { IPmProjectRepository } from '../../application/ports/output/repositories/pm-project-repository.interface.js';
+import { SQLitePmProjectRepository } from '../repositories/sqlite-pm-project.repository.js';
+import type { IWorkItemRepository } from '../../application/ports/output/repositories/work-item-repository.interface.js';
+import { SQLiteWorkItemRepository } from '../repositories/sqlite-work-item.repository.js';
+import type { IWorkItemStateRepository } from '../../application/ports/output/repositories/work-item-state-repository.interface.js';
+import { SQLiteWorkItemStateRepository } from '../repositories/sqlite-work-item-state.repository.js';
+import type { ILabelRepository } from '../../application/ports/output/repositories/label-repository.interface.js';
+import { SQLiteLabelRepository } from '../repositories/sqlite-label.repository.js';
+import type { ICommentRepository } from '../../application/ports/output/repositories/comment-repository.interface.js';
+import { SQLiteCommentRepository } from '../repositories/sqlite-comment.repository.js';
+import type { ISavedViewRepository } from '../../application/ports/output/repositories/saved-view-repository.interface.js';
+import { SQLiteSavedViewRepository } from '../repositories/sqlite-saved-view.repository.js';
+import type { ICustomPropertyRepository } from '../../application/ports/output/repositories/custom-property-repository.interface.js';
+import { SQLiteCustomPropertyRepository } from '../repositories/sqlite-custom-property.repository.js';
+import type { IActivityLogRepository } from '../../application/ports/output/repositories/activity-log-repository.interface.js';
+import { SQLiteActivityLogRepository } from '../repositories/sqlite-activity-log.repository.js';
+import type { IWorkItemRelationRepository } from '../../application/ports/output/repositories/work-item-relation-repository.interface.js';
+import { SQLiteWorkItemRelationRepository } from '../repositories/sqlite-work-item-relation.repository.js';
+import type { ICycleRepository } from '../../application/ports/output/repositories/cycle-repository.interface.js';
+import { SQLiteCycleRepository } from '../repositories/sqlite-cycle.repository.js';
+import type { IPmModuleRepository } from '../../application/ports/output/repositories/pm-module-repository.interface.js';
+import { SQLitePmModuleRepository } from '../repositories/sqlite-pm-module.repository.js';
+import type { IPageRepository } from '../../application/ports/output/repositories/page-repository.interface.js';
+import { SQLitePageRepository } from '../repositories/sqlite-page.repository.js';
+import type { IPageVersionRepository } from '../../application/ports/output/repositories/page-version-repository.interface.js';
+import { SQLitePageVersionRepository } from '../repositories/sqlite-page-version.repository.js';
+import type { IEpicRepository } from '../../application/ports/output/repositories/epic-repository.interface.js';
+import { SQLiteEpicRepository } from '../repositories/sqlite-epic.repository.js';
+import type { IPmAttachmentRepository } from '../../application/ports/output/repositories/pm-attachment-repository.interface.js';
+import { SQLitePmAttachmentRepository } from '../repositories/sqlite-pm-attachment.repository.js';
+import type { ITimeEntryRepository } from '../../application/ports/output/repositories/time-entry-repository.interface.js';
+import { SQLiteTimeEntryRepository } from '../repositories/sqlite-time-entry.repository.js';
+import type { IIntakeItemRepository } from '../../application/ports/output/repositories/intake-item-repository.interface.js';
+import { SQLiteIntakeItemRepository } from '../repositories/sqlite-intake-item.repository.js';
+import type { INotificationRepository } from '../../application/ports/output/repositories/notification-repository.interface.js';
+import { SQLiteNotificationRepository } from '../repositories/sqlite-notification.repository.js';
+import type { IPmUserRepository } from '../../application/ports/output/repositories/pm-user-repository.interface.js';
+import { SQLitePmUserRepository } from '../repositories/sqlite-pm-user.repository.js';
+import type { IPmSessionRepository } from '../../application/ports/output/repositories/pm-session-repository.interface.js';
+import { SQLitePmSessionRepository } from '../repositories/sqlite-pm-session.repository.js';
+import type { IPmProjectMemberRepository } from '../../application/ports/output/repositories/pm-project-member-repository.interface.js';
+import { SQLitePmProjectMemberRepository } from '../repositories/sqlite-pm-project-member.repository.js';
+import type { IPmAuditLogRepository } from '../../application/ports/output/repositories/pm-audit-log-repository.interface.js';
+import { SQLitePmAuditLogRepository } from '../repositories/sqlite-pm-audit-log.repository.js';
+
+// Attachment storage and integration services
+import type { IAttachmentStorage } from '../../application/ports/output/services/attachment-storage.interface.js';
+import { LocalAttachmentStorageService } from '../services/storage/local-attachment-storage.service.js';
+import type { IWebhookService } from '../../application/ports/output/services/webhook.interface.js';
+import { NoopWebhookService } from '../services/integrations/noop-webhook.service.js';
 
 // Validator interfaces and implementations
 import type { IAgentValidator } from '../../application/ports/output/agents/agent-validator.interface.js';
@@ -168,6 +219,111 @@ import { DeleteApplicationUseCase } from '../../application/use-cases/applicatio
 import { ResumeApplicationWorkflowUseCase } from '../../application/use-cases/applications/resume-application-workflow.use-case.js';
 import { UpdateApplicationUseCase } from '../../application/use-cases/applications/update-application.use-case.js';
 
+// PM use cases
+import { CreatePmProjectUseCase } from '../../application/use-cases/pm-projects/create-pm-project.use-case.js';
+import { ListPmProjectsUseCase } from '../../application/use-cases/pm-projects/list-pm-projects.use-case.js';
+import { GetPmProjectUseCase } from '../../application/use-cases/pm-projects/get-pm-project.use-case.js';
+import { UpdatePmProjectUseCase } from '../../application/use-cases/pm-projects/update-pm-project.use-case.js';
+import { DeletePmProjectUseCase } from '../../application/use-cases/pm-projects/delete-pm-project.use-case.js';
+import { CreateWorkItemUseCase } from '../../application/use-cases/work-items/create-work-item.use-case.js';
+import { ListWorkItemsUseCase } from '../../application/use-cases/work-items/list-work-items.use-case.js';
+import { GetWorkItemUseCase } from '../../application/use-cases/work-items/get-work-item.use-case.js';
+import { UpdateWorkItemUseCase } from '../../application/use-cases/work-items/update-work-item.use-case.js';
+import { DeleteWorkItemUseCase } from '../../application/use-cases/work-items/delete-work-item.use-case.js';
+import { ManageWorkItemStatesUseCase } from '../../application/use-cases/work-item-states/manage-work-item-states.use-case.js';
+import { ManageLabelsUseCase } from '../../application/use-cases/labels/manage-labels.use-case.js';
+import { ManageCommentsUseCase } from '../../application/use-cases/comments/manage-comments.use-case.js';
+import { ManageSavedViewsUseCase } from '../../application/use-cases/saved-views/manage-saved-views.use-case.js';
+import { ManageCustomPropertiesUseCase } from '../../application/use-cases/custom-properties/manage-custom-properties.use-case.js';
+import { ListActivityLogUseCase } from '../../application/use-cases/activity-log/list-activity-log.use-case.js';
+import { GlobalSearchUseCase } from '../../application/use-cases/search/global-search.use-case.js';
+import { CreateWorkItemRelationUseCase } from '../../application/use-cases/work-item-relations/create-work-item-relation.use-case.js';
+import { DeleteWorkItemRelationUseCase } from '../../application/use-cases/work-item-relations/delete-work-item-relation.use-case.js';
+import { ListWorkItemRelationsUseCase } from '../../application/use-cases/work-item-relations/list-work-item-relations.use-case.js';
+import { BulkUpdateWorkItemsUseCase } from '../../application/use-cases/work-items/bulk-update-work-items.use-case.js';
+
+// Cycle use cases
+import { CreateCycleUseCase } from '../../application/use-cases/cycles/create-cycle.use-case.js';
+import { ListCyclesUseCase } from '../../application/use-cases/cycles/list-cycles.use-case.js';
+import { GetCycleUseCase } from '../../application/use-cases/cycles/get-cycle.use-case.js';
+import { UpdateCycleUseCase } from '../../application/use-cases/cycles/update-cycle.use-case.js';
+import { DeleteCycleUseCase } from '../../application/use-cases/cycles/delete-cycle.use-case.js';
+import { AddItemsToCycleUseCase } from '../../application/use-cases/cycles/add-items-to-cycle.use-case.js';
+import { RemoveItemsFromCycleUseCase } from '../../application/use-cases/cycles/remove-items-from-cycle.use-case.js';
+import { TransferCycleItemsUseCase } from '../../application/use-cases/cycles/transfer-cycle-items.use-case.js';
+
+// Module use cases
+import { CreateModuleUseCase } from '../../application/use-cases/modules/create-module.use-case.js';
+import { ListModulesUseCase } from '../../application/use-cases/modules/list-modules.use-case.js';
+import { GetModuleUseCase } from '../../application/use-cases/modules/get-module.use-case.js';
+import { UpdateModuleUseCase } from '../../application/use-cases/modules/update-module.use-case.js';
+import { DeleteModuleUseCase } from '../../application/use-cases/modules/delete-module.use-case.js';
+import { AddItemsToModuleUseCase } from '../../application/use-cases/modules/add-items-to-module.use-case.js';
+import { RemoveItemsFromModuleUseCase } from '../../application/use-cases/modules/remove-items-from-module.use-case.js';
+
+// Page use cases
+import { CreatePageUseCase } from '../../application/use-cases/pages/create-page.use-case.js';
+import { ListPagesUseCase } from '../../application/use-cases/pages/list-pages.use-case.js';
+import { GetPageUseCase } from '../../application/use-cases/pages/get-page.use-case.js';
+import { UpdatePageUseCase } from '../../application/use-cases/pages/update-page.use-case.js';
+import { DeletePageUseCase } from '../../application/use-cases/pages/delete-page.use-case.js';
+
+// Attachment use cases
+import { UploadAttachmentUseCase } from '../../application/use-cases/pm-attachments/upload-attachment.use-case.js';
+import { ListAttachmentsUseCase } from '../../application/use-cases/pm-attachments/list-attachments.use-case.js';
+import { DeleteAttachmentUseCase } from '../../application/use-cases/pm-attachments/delete-attachment.use-case.js';
+
+// Epic use cases
+import { CreateEpicUseCase } from '../../application/use-cases/epics/create-epic.use-case.js';
+import { ListEpicsUseCase } from '../../application/use-cases/epics/list-epics.use-case.js';
+import { UpdateEpicUseCase } from '../../application/use-cases/epics/update-epic.use-case.js';
+import { DeleteEpicUseCase } from '../../application/use-cases/epics/delete-epic.use-case.js';
+
+// Time entry use cases
+import { LogTimeEntryUseCase } from '../../application/use-cases/time-entries/log-time-entry.use-case.js';
+import { ListTimeEntriesUseCase } from '../../application/use-cases/time-entries/list-time-entries.use-case.js';
+import { DeleteTimeEntryUseCase } from '../../application/use-cases/time-entries/delete-time-entry.use-case.js';
+
+// Intake use cases
+import { CreateIntakeItemUseCase } from '../../application/use-cases/intake/create-intake-item.use-case.js';
+import { ListIntakeItemsUseCase } from '../../application/use-cases/intake/list-intake-items.use-case.js';
+import { AcceptIntakeItemUseCase } from '../../application/use-cases/intake/accept-intake-item.use-case.js';
+import { DeclineIntakeItemUseCase } from '../../application/use-cases/intake/decline-intake-item.use-case.js';
+import { AutoTriageIntakeItemUseCase } from '../../application/use-cases/intake/auto-triage-intake-item.use-case.js';
+import { DetectDuplicatesUseCase } from '../../application/use-cases/intake/detect-duplicates.use-case.js';
+
+// Notification use cases
+import { ListNotificationsUseCase } from '../../application/use-cases/notifications/list-notifications.use-case.js';
+import { MarkNotificationReadUseCase } from '../../application/use-cases/notifications/mark-notification-read.use-case.js';
+
+// Import/Export use cases
+import { ExportWorkItemsCsvUseCase } from '../../application/use-cases/import-export/export-work-items-csv.use-case.js';
+import { ImportWorkItemsCsvUseCase } from '../../application/use-cases/import-export/import-work-items-csv.use-case.js';
+
+// Auth use cases
+import { RegisterUserUseCase } from '../../application/use-cases/auth/register-user.use-case.js';
+import { LoginUserUseCase } from '../../application/use-cases/auth/login-user.use-case.js';
+import { LogoutUserUseCase } from '../../application/use-cases/auth/logout-user.use-case.js';
+import { ValidateSessionUseCase } from '../../application/use-cases/auth/validate-session.use-case.js';
+
+// Project member use cases
+import { AddProjectMemberUseCase } from '../../application/use-cases/project-members/add-project-member.use-case.js';
+import { RemoveProjectMemberUseCase } from '../../application/use-cases/project-members/remove-project-member.use-case.js';
+import { UpdateProjectMemberRoleUseCase } from '../../application/use-cases/project-members/update-project-member-role.use-case.js';
+import { ListProjectMembersUseCase } from '../../application/use-cases/project-members/list-project-members.use-case.js';
+
+// Audit use cases
+import { CreateAuditLogUseCase } from '../../application/use-cases/audit/create-audit-log.use-case.js';
+import { ListAuditLogsUseCase } from '../../application/use-cases/audit/list-audit-logs.use-case.js';
+import { SendWebhookUseCase } from '../../application/use-cases/integrations/send-webhook.use-case.js';
+
+// Analytics use cases
+import { GetCycleBurndownUseCase } from '../../application/use-cases/analytics/get-cycle-burndown.use-case.js';
+import { GetProjectBreakdownUseCase } from '../../application/use-cases/analytics/get-project-breakdown.use-case.js';
+import { GetModuleProgressUseCase } from '../../application/use-cases/analytics/get-module-progress.use-case.js';
+import { GetAiCycleSummaryUseCase } from '../../application/use-cases/analytics/get-ai-cycle-summary.use-case.js';
+import { GetAiProjectHealthUseCase } from '../../application/use-cases/analytics/get-ai-project-health.use-case.js';
+
 // Deployment use cases
 import { StartFeatureDeploymentUseCase } from '../../application/use-cases/deployments/start-feature-deployment.use-case.js';
 import { StartRepositoryDeploymentUseCase } from '../../application/use-cases/deployments/start-repository-deployment.use-case.js';
@@ -259,6 +415,161 @@ export async function initializeContainer(): Promise<typeof container> {
     },
   });
 
+  // PM repositories
+  container.register<IPmProjectRepository>('IPmProjectRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePmProjectRepository(database);
+    },
+  });
+
+  container.register<IWorkItemRepository>('IWorkItemRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteWorkItemRepository(database);
+    },
+  });
+
+  container.register<IWorkItemStateRepository>('IWorkItemStateRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteWorkItemStateRepository(database);
+    },
+  });
+
+  container.register<ILabelRepository>('ILabelRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteLabelRepository(database);
+    },
+  });
+
+  container.register<ICommentRepository>('ICommentRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteCommentRepository(database);
+    },
+  });
+
+  container.register<ISavedViewRepository>('ISavedViewRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteSavedViewRepository(database);
+    },
+  });
+
+  container.register<ICustomPropertyRepository>('ICustomPropertyRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteCustomPropertyRepository(database);
+    },
+  });
+
+  container.register<IActivityLogRepository>('IActivityLogRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteActivityLogRepository(database);
+    },
+  });
+
+  container.register<IWorkItemRelationRepository>('IWorkItemRelationRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteWorkItemRelationRepository(database);
+    },
+  });
+
+  container.register<ICycleRepository>('ICycleRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteCycleRepository(database);
+    },
+  });
+
+  container.register<IPmModuleRepository>('IPmModuleRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePmModuleRepository(database);
+    },
+  });
+
+  container.register<IPageRepository>('IPageRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePageRepository(database);
+    },
+  });
+
+  container.register<IPageVersionRepository>('IPageVersionRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePageVersionRepository(database);
+    },
+  });
+
+  container.register<IEpicRepository>('IEpicRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteEpicRepository(database);
+    },
+  });
+
+  container.register<IPmAttachmentRepository>('IPmAttachmentRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePmAttachmentRepository(database);
+    },
+  });
+
+  container.register<ITimeEntryRepository>('ITimeEntryRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteTimeEntryRepository(database);
+    },
+  });
+
+  container.register<IIntakeItemRepository>('IIntakeItemRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteIntakeItemRepository(database);
+    },
+  });
+
+  container.register<INotificationRepository>('INotificationRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteNotificationRepository(database);
+    },
+  });
+
+  container.register<IPmUserRepository>('IPmUserRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePmUserRepository(database);
+    },
+  });
+
+  container.register<IPmSessionRepository>('IPmSessionRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePmSessionRepository(database);
+    },
+  });
+
+  container.register<IPmProjectMemberRepository>('IPmProjectMemberRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePmProjectMemberRepository(database);
+    },
+  });
+
+  container.register<IPmAuditLogRepository>('IPmAuditLogRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePmAuditLogRepository(database);
+    },
+  });
+
   // Register external dependencies as tokens
   // On Windows, agent CLIs ship as .cmd/.ps1 scripts (e.g. cursor's `agent.cmd`).
   // execFile without shell: true cannot resolve .cmd extensions, causing ENOENT.
@@ -297,6 +608,17 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.registerSingleton<IWorktreeService>('IWorktreeService', WorktreeService);
   container.registerSingleton<IFileSystemService>('IFileSystemService', FileSystemService);
+  container.registerSingleton<IWebhookService>('IWebhookService', NoopWebhookService);
+
+  // Attachment storage — derives path from database directory
+  container.register<IAttachmentStorage>('IAttachmentStorage', {
+    useFactory: () => {
+      const dbFilename = db.name;
+      const dbDir = dbFilename ? nodePath.dirname(dbFilename) : '.shep';
+      const storagePath = nodePath.join(dbDir, 'attachments');
+      return new LocalAttachmentStorageService(storagePath);
+    },
+  });
   container.registerSingleton<IApplicationBriefStore>(
     'IApplicationBriefStore',
     ApplicationBriefStore
@@ -526,6 +848,148 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(GetDeploymentStatusUseCase);
   container.registerSingleton(ListDeploymentsUseCase);
 
+  // PM use cases
+  container.registerSingleton(CreatePmProjectUseCase);
+  container.registerSingleton(ListPmProjectsUseCase);
+  container.registerSingleton(GetPmProjectUseCase);
+  container.registerSingleton(UpdatePmProjectUseCase);
+  container.registerSingleton(DeletePmProjectUseCase);
+  container.registerSingleton(CreateWorkItemUseCase);
+  container.registerSingleton(ListWorkItemsUseCase);
+  container.registerSingleton(GetWorkItemUseCase);
+  container.registerSingleton(UpdateWorkItemUseCase);
+  container.registerSingleton(DeleteWorkItemUseCase);
+  container.registerSingleton(ManageWorkItemStatesUseCase);
+  container.registerSingleton(ManageLabelsUseCase);
+  container.registerSingleton(ManageCommentsUseCase);
+  container.registerSingleton(ManageSavedViewsUseCase);
+  container.registerSingleton(ManageCustomPropertiesUseCase);
+  container.registerSingleton(ListActivityLogUseCase);
+  container.registerSingleton(GlobalSearchUseCase);
+  container.registerSingleton(CreateWorkItemRelationUseCase);
+  container.registerSingleton(DeleteWorkItemRelationUseCase);
+  container.registerSingleton(ListWorkItemRelationsUseCase);
+  container.registerSingleton(BulkUpdateWorkItemsUseCase);
+
+  // Cycle use cases
+  container.registerSingleton(CreateCycleUseCase);
+  container.registerSingleton(ListCyclesUseCase);
+  container.registerSingleton(GetCycleUseCase);
+  container.registerSingleton(UpdateCycleUseCase);
+  container.registerSingleton(DeleteCycleUseCase);
+  container.registerSingleton(AddItemsToCycleUseCase);
+  container.registerSingleton(RemoveItemsFromCycleUseCase);
+  container.registerSingleton(TransferCycleItemsUseCase);
+
+  // Module use cases
+  container.registerSingleton(CreateModuleUseCase);
+  container.registerSingleton(ListModulesUseCase);
+  container.registerSingleton(GetModuleUseCase);
+  container.registerSingleton(UpdateModuleUseCase);
+  container.registerSingleton(DeleteModuleUseCase);
+  container.registerSingleton(AddItemsToModuleUseCase);
+  container.registerSingleton(RemoveItemsFromModuleUseCase);
+
+  // Page use cases
+  container.registerSingleton(CreatePageUseCase);
+  container.registerSingleton(ListPagesUseCase);
+  container.registerSingleton(GetPageUseCase);
+  container.registerSingleton(UpdatePageUseCase);
+  container.registerSingleton(DeletePageUseCase);
+
+  // Attachment use cases
+  container.registerSingleton(UploadAttachmentUseCase);
+  container.register('UploadAttachmentUseCase', { useToken: UploadAttachmentUseCase });
+  container.registerSingleton(ListAttachmentsUseCase);
+  container.register('ListAttachmentsUseCase', { useToken: ListAttachmentsUseCase });
+  container.registerSingleton(DeleteAttachmentUseCase);
+  container.register('DeleteAttachmentUseCase', { useToken: DeleteAttachmentUseCase });
+
+  // Epic use cases
+  container.registerSingleton(CreateEpicUseCase);
+  container.register('CreateEpicUseCase', { useToken: CreateEpicUseCase });
+  container.registerSingleton(ListEpicsUseCase);
+  container.register('ListEpicsUseCase', { useToken: ListEpicsUseCase });
+  container.registerSingleton(UpdateEpicUseCase);
+  container.register('UpdateEpicUseCase', { useToken: UpdateEpicUseCase });
+  container.registerSingleton(DeleteEpicUseCase);
+  container.register('DeleteEpicUseCase', { useToken: DeleteEpicUseCase });
+
+  // Time entry use cases
+  container.registerSingleton(LogTimeEntryUseCase);
+  container.register('LogTimeEntryUseCase', { useToken: LogTimeEntryUseCase });
+  container.registerSingleton(ListTimeEntriesUseCase);
+  container.register('ListTimeEntriesUseCase', { useToken: ListTimeEntriesUseCase });
+  container.registerSingleton(DeleteTimeEntryUseCase);
+  container.register('DeleteTimeEntryUseCase', { useToken: DeleteTimeEntryUseCase });
+
+  // Intake use cases
+  container.registerSingleton(CreateIntakeItemUseCase);
+  container.register('CreateIntakeItemUseCase', { useToken: CreateIntakeItemUseCase });
+  container.registerSingleton(ListIntakeItemsUseCase);
+  container.register('ListIntakeItemsUseCase', { useToken: ListIntakeItemsUseCase });
+  container.registerSingleton(AcceptIntakeItemUseCase);
+  container.register('AcceptIntakeItemUseCase', { useToken: AcceptIntakeItemUseCase });
+  container.registerSingleton(DeclineIntakeItemUseCase);
+  container.register('DeclineIntakeItemUseCase', { useToken: DeclineIntakeItemUseCase });
+  container.registerSingleton(AutoTriageIntakeItemUseCase);
+  container.register('AutoTriageIntakeItemUseCase', { useToken: AutoTriageIntakeItemUseCase });
+  container.registerSingleton(DetectDuplicatesUseCase);
+  container.register('DetectDuplicatesUseCase', { useToken: DetectDuplicatesUseCase });
+
+  // Notification use cases
+  container.registerSingleton(ListNotificationsUseCase);
+  container.register('ListNotificationsUseCase', { useToken: ListNotificationsUseCase });
+  container.registerSingleton(MarkNotificationReadUseCase);
+  container.register('MarkNotificationReadUseCase', { useToken: MarkNotificationReadUseCase });
+
+  // Auth use cases
+  container.registerSingleton(RegisterUserUseCase);
+  container.register('RegisterUserUseCase', { useToken: RegisterUserUseCase });
+  container.registerSingleton(LoginUserUseCase);
+  container.register('LoginUserUseCase', { useToken: LoginUserUseCase });
+  container.registerSingleton(LogoutUserUseCase);
+  container.register('LogoutUserUseCase', { useToken: LogoutUserUseCase });
+  container.registerSingleton(ValidateSessionUseCase);
+  container.register('ValidateSessionUseCase', { useToken: ValidateSessionUseCase });
+
+  // Project member use cases
+  container.registerSingleton(AddProjectMemberUseCase);
+  container.register('AddProjectMemberUseCase', { useToken: AddProjectMemberUseCase });
+  container.registerSingleton(RemoveProjectMemberUseCase);
+  container.register('RemoveProjectMemberUseCase', { useToken: RemoveProjectMemberUseCase });
+  container.registerSingleton(UpdateProjectMemberRoleUseCase);
+  container.register('UpdateProjectMemberRoleUseCase', {
+    useToken: UpdateProjectMemberRoleUseCase,
+  });
+  container.registerSingleton(ListProjectMembersUseCase);
+  container.register('ListProjectMembersUseCase', { useToken: ListProjectMembersUseCase });
+
+  // Audit use cases
+  container.registerSingleton(CreateAuditLogUseCase);
+  container.register('CreateAuditLogUseCase', { useToken: CreateAuditLogUseCase });
+  container.registerSingleton(ListAuditLogsUseCase);
+  container.register('ListAuditLogsUseCase', { useToken: ListAuditLogsUseCase });
+
+  // Integration use cases
+  container.registerSingleton(SendWebhookUseCase);
+  container.register('SendWebhookUseCase', { useToken: SendWebhookUseCase });
+
+  // Import/Export use cases
+  container.registerSingleton(ExportWorkItemsCsvUseCase);
+  container.register('ExportWorkItemsCsvUseCase', { useToken: ExportWorkItemsCsvUseCase });
+  container.registerSingleton(ImportWorkItemsCsvUseCase);
+  container.register('ImportWorkItemsCsvUseCase', { useToken: ImportWorkItemsCsvUseCase });
+
+  // Analytics use cases
+  container.registerSingleton(GetCycleBurndownUseCase);
+  container.registerSingleton(GetProjectBreakdownUseCase);
+  container.registerSingleton(GetModuleProgressUseCase);
+  container.registerSingleton(GetAiCycleSummaryUseCase);
+  container.register('GetAiCycleSummaryUseCase', { useToken: GetAiCycleSummaryUseCase });
+  container.registerSingleton(GetAiProjectHealthUseCase);
+  container.register('GetAiProjectHealthUseCase', { useToken: GetAiProjectHealthUseCase });
+
   // Session repositories (per-AgentType string tokens)
   container.register(`IAgentSessionRepository:${AgentType.ClaudeCode}`, {
     useFactory: () => new ClaudeCodeSessionRepository(),
@@ -722,6 +1186,148 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.register('CreateTerminalSessionUseCase', {
     useFactory: (c) => c.resolve(CreateTerminalSessionUseCase),
+  });
+
+  // PM use case string-token aliases for web routes
+  container.register('CreatePmProjectUseCase', {
+    useFactory: (c) => c.resolve(CreatePmProjectUseCase),
+  });
+  container.register('ListPmProjectsUseCase', {
+    useFactory: (c) => c.resolve(ListPmProjectsUseCase),
+  });
+  container.register('GetPmProjectUseCase', {
+    useFactory: (c) => c.resolve(GetPmProjectUseCase),
+  });
+  container.register('UpdatePmProjectUseCase', {
+    useFactory: (c) => c.resolve(UpdatePmProjectUseCase),
+  });
+  container.register('DeletePmProjectUseCase', {
+    useFactory: (c) => c.resolve(DeletePmProjectUseCase),
+  });
+  container.register('CreateWorkItemUseCase', {
+    useFactory: (c) => c.resolve(CreateWorkItemUseCase),
+  });
+  container.register('ListWorkItemsUseCase', {
+    useFactory: (c) => c.resolve(ListWorkItemsUseCase),
+  });
+  container.register('GetWorkItemUseCase', {
+    useFactory: (c) => c.resolve(GetWorkItemUseCase),
+  });
+  container.register('UpdateWorkItemUseCase', {
+    useFactory: (c) => c.resolve(UpdateWorkItemUseCase),
+  });
+  container.register('DeleteWorkItemUseCase', {
+    useFactory: (c) => c.resolve(DeleteWorkItemUseCase),
+  });
+  container.register('ManageWorkItemStatesUseCase', {
+    useFactory: (c) => c.resolve(ManageWorkItemStatesUseCase),
+  });
+  container.register('ManageLabelsUseCase', {
+    useFactory: (c) => c.resolve(ManageLabelsUseCase),
+  });
+  container.register('ManageCommentsUseCase', {
+    useFactory: (c) => c.resolve(ManageCommentsUseCase),
+  });
+  container.register('ManageSavedViewsUseCase', {
+    useFactory: (c) => c.resolve(ManageSavedViewsUseCase),
+  });
+  container.register('ManageCustomPropertiesUseCase', {
+    useFactory: (c) => c.resolve(ManageCustomPropertiesUseCase),
+  });
+  container.register('ListActivityLogUseCase', {
+    useFactory: (c) => c.resolve(ListActivityLogUseCase),
+  });
+  container.register('GlobalSearchUseCase', {
+    useFactory: (c) => c.resolve(GlobalSearchUseCase),
+  });
+  container.register('CreateWorkItemRelationUseCase', {
+    useFactory: (c) => c.resolve(CreateWorkItemRelationUseCase),
+  });
+  container.register('DeleteWorkItemRelationUseCase', {
+    useFactory: (c) => c.resolve(DeleteWorkItemRelationUseCase),
+  });
+  container.register('ListWorkItemRelationsUseCase', {
+    useFactory: (c) => c.resolve(ListWorkItemRelationsUseCase),
+  });
+  container.register('BulkUpdateWorkItemsUseCase', {
+    useFactory: (c) => c.resolve(BulkUpdateWorkItemsUseCase),
+  });
+
+  // Cycle use case string-token aliases
+  container.register('CreateCycleUseCase', {
+    useFactory: (c) => c.resolve(CreateCycleUseCase),
+  });
+  container.register('ListCyclesUseCase', {
+    useFactory: (c) => c.resolve(ListCyclesUseCase),
+  });
+  container.register('GetCycleUseCase', {
+    useFactory: (c) => c.resolve(GetCycleUseCase),
+  });
+  container.register('UpdateCycleUseCase', {
+    useFactory: (c) => c.resolve(UpdateCycleUseCase),
+  });
+  container.register('DeleteCycleUseCase', {
+    useFactory: (c) => c.resolve(DeleteCycleUseCase),
+  });
+  container.register('AddItemsToCycleUseCase', {
+    useFactory: (c) => c.resolve(AddItemsToCycleUseCase),
+  });
+  container.register('RemoveItemsFromCycleUseCase', {
+    useFactory: (c) => c.resolve(RemoveItemsFromCycleUseCase),
+  });
+  container.register('TransferCycleItemsUseCase', {
+    useFactory: (c) => c.resolve(TransferCycleItemsUseCase),
+  });
+
+  // Module use case string-token aliases
+  container.register('CreateModuleUseCase', {
+    useFactory: (c) => c.resolve(CreateModuleUseCase),
+  });
+  container.register('ListModulesUseCase', {
+    useFactory: (c) => c.resolve(ListModulesUseCase),
+  });
+  container.register('GetModuleUseCase', {
+    useFactory: (c) => c.resolve(GetModuleUseCase),
+  });
+  container.register('UpdateModuleUseCase', {
+    useFactory: (c) => c.resolve(UpdateModuleUseCase),
+  });
+  container.register('DeleteModuleUseCase', {
+    useFactory: (c) => c.resolve(DeleteModuleUseCase),
+  });
+  container.register('AddItemsToModuleUseCase', {
+    useFactory: (c) => c.resolve(AddItemsToModuleUseCase),
+  });
+  container.register('RemoveItemsFromModuleUseCase', {
+    useFactory: (c) => c.resolve(RemoveItemsFromModuleUseCase),
+  });
+
+  // Page use case string-token aliases
+  container.register('CreatePageUseCase', {
+    useFactory: (c) => c.resolve(CreatePageUseCase),
+  });
+  container.register('ListPagesUseCase', {
+    useFactory: (c) => c.resolve(ListPagesUseCase),
+  });
+  container.register('GetPageUseCase', {
+    useFactory: (c) => c.resolve(GetPageUseCase),
+  });
+  container.register('UpdatePageUseCase', {
+    useFactory: (c) => c.resolve(UpdatePageUseCase),
+  });
+  container.register('DeletePageUseCase', {
+    useFactory: (c) => c.resolve(DeletePageUseCase),
+  });
+
+  // Analytics use case string-token aliases
+  container.register('GetCycleBurndownUseCase', {
+    useFactory: (c) => c.resolve(GetCycleBurndownUseCase),
+  });
+  container.register('GetProjectBreakdownUseCase', {
+    useFactory: (c) => c.resolve(GetProjectBreakdownUseCase),
+  });
+  container.register('GetModuleProgressUseCase', {
+    useFactory: (c) => c.resolve(GetModuleProgressUseCase),
   });
 
   // Register interactive session infrastructure

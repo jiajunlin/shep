@@ -15,6 +15,7 @@ import {
   Puzzle,
   Settings,
   TableProperties,
+  FolderKanban,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -183,6 +184,14 @@ export function AppSidebar({
             href="/tools"
             active={pathname === '/tools'}
           />
+          {featureFlags.projects ? (
+            <SidebarNavItem
+              icon={FolderKanban}
+              label="Projects"
+              href="/projects"
+              active={pathname?.startsWith('/projects') ?? false}
+            />
+          ) : null}
           {featureFlags.skills ? (
             <SidebarNavItem
               icon={Puzzle}

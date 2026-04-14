@@ -663,6 +663,10 @@ export type FeatureFlags = {
    * Enable the Inventory page showing all repositories and features
    */
   inventory: boolean;
+  /**
+   * Enable Projects pages and navigation (project management)
+   */
+  projects: boolean;
 };
 
 /**
@@ -1797,6 +1801,688 @@ export type Application = SoftDeletableEntity & {
    */
   agentSessionId?: string;
 };
+export enum EstimateType {
+  None = 'None',
+  Category = 'Category',
+  Points = 'Points',
+}
+
+/**
+ * A project management container for work items, cycles, and modules
+ */
+export type PmProject = SoftDeletableEntity & {
+  /**
+   * Human-readable project name
+   */
+  name: string;
+  /**
+   * URL-friendly identifier derived from name
+   */
+  slug: string;
+  /**
+   * Project description
+   */
+  description?: string;
+  /**
+   * Short prefix for work item IDs (2-5 uppercase letters, e.g., PROJ)
+   */
+  identifierPrefix: string;
+  /**
+   * Atomic counter for sequential work item ID generation
+   */
+  workItemCounter: number;
+  /**
+   * Estimation system used by this project
+   */
+  estimateType: EstimateType;
+  /**
+   * Optional link to an Application (AI workspace)
+   */
+  applicationId?: UUID;
+  /**
+   * Project start date
+   */
+  startDate?: any;
+  /**
+   * Project end date
+   */
+  endDate?: any;
+  /**
+   * Feature toggles JSON — enables/disables cycles, modules, epics, pages, intake, time tracking
+   */
+  featureToggles?: string;
+};
+export enum Priority {
+  Urgent = 'Urgent',
+  High = 'High',
+  Medium = 'Medium',
+  Low = 'Low',
+  None = 'None',
+}
+export type float = any;
+export type float64 = float;
+
+/**
+ * A unit of work within a project — issue, task, bug, or story
+ */
+export type WorkItem = SoftDeletableEntity & {
+  /**
+   * Project this work item belongs to
+   */
+  projectId: UUID;
+  /**
+   * Sequential number within the project (e.g., 42 in PROJ-42)
+   */
+  sequenceId: number;
+  /**
+   * Denormalized project prefix for display (e.g., 'PROJ')
+   */
+  identifierPrefix: string;
+  /**
+   * Work item title (required)
+   */
+  title: string;
+  /**
+   * Rich text description stored as JSON (TipTap/ProseMirror format)
+   */
+  description?: string;
+  /**
+   * Current workflow state ID
+   */
+  stateId: UUID;
+  /**
+   * Priority level
+   */
+  priority: Priority;
+  /**
+   * Parent work item ID for sub-item hierarchy (max 3 levels)
+   */
+  parentId?: UUID;
+  /**
+   * Manual sort order (float64 for insertion between items)
+   */
+  sortOrder: float64;
+  /**
+   * Planned start date
+   */
+  startDate?: any;
+  /**
+   * Target due date
+   */
+  dueDate?: any;
+  /**
+   * Estimate value — category label (XS/S/M/L/XL) or numeric string
+   */
+  estimateValue?: string;
+  /**
+   * Custom property values as JSON object keyed by property ID
+   */
+  customPropertyValues?: string;
+};
+export enum StateGroup {
+  Backlog = 'Backlog',
+  Unstarted = 'Unstarted',
+  Started = 'Started',
+  Completed = 'Completed',
+  Cancelled = 'Cancelled',
+}
+
+/**
+ * A customizable workflow state within a project, belonging to a fixed semantic group
+ */
+export type WorkItemState = SoftDeletableEntity & {
+  /**
+   * Project this state belongs to
+   */
+  projectId: UUID;
+  /**
+   * Display name for the state (e.g., 'In Review', 'QA Testing')
+   */
+  name: string;
+  /**
+   * Hex color code for UI rendering (e.g., '#3b82f6')
+   */
+  color: string;
+  /**
+   * Position in the state list for ordering
+   */
+  displayOrder: number;
+  /**
+   * Semantic group this state belongs to — used for analytics and burndown
+   */
+  stateGroup: StateGroup;
+  /**
+   * Whether this is the default state for new work items in the project
+   */
+  isDefault: boolean;
+};
+export enum WorkItemTypeName {
+  Task = 'Task',
+  Bug = 'Bug',
+  Story = 'Story',
+  Feature = 'Feature',
+}
+
+/**
+ * A work item type classification within a project
+ */
+export type WorkItemType = SoftDeletableEntity & {
+  /**
+   * Project this type belongs to
+   */
+  projectId: UUID;
+  /**
+   * Type name (Task, Bug, Story, Feature)
+   */
+  name: WorkItemTypeName;
+  /**
+   * Optional description of when to use this type
+   */
+  description?: string;
+  /**
+   * Optional icon identifier for UI rendering
+   */
+  icon?: string;
+  /**
+   * Whether this is the default type for new work items
+   */
+  isDefault: boolean;
+};
+
+/**
+ * A project-scoped label for categorizing work items
+ */
+export type Label = SoftDeletableEntity & {
+  /**
+   * Project this label belongs to
+   */
+  projectId: UUID;
+  /**
+   * Label display name
+   */
+  name: string;
+  /**
+   * Hex color code for UI rendering (e.g., '#ef4444')
+   */
+  color: string;
+  /**
+   * Optional parent label ID for one-level grouping
+   */
+  parentId?: UUID;
+};
+
+/**
+ * A threaded comment on a work item
+ */
+export type Comment = SoftDeletableEntity & {
+  /**
+   * Work item this comment belongs to
+   */
+  workItemId: UUID;
+  /**
+   * Parent comment ID for threading (null for top-level comments)
+   */
+  parentId?: UUID;
+  /**
+   * Comment content — rich text JSON or plain text
+   */
+  content: string;
+  /**
+   * ID of the comment author
+   */
+  authorId: string;
+};
+export enum ViewLayout {
+  List = 'List',
+  Board = 'Board',
+  Table = 'Table',
+  Calendar = 'Calendar',
+  Timeline = 'Timeline',
+}
+
+/**
+ * A saved view configuration for work items in a project
+ */
+export type SavedView = SoftDeletableEntity & {
+  /**
+   * Project this view belongs to
+   */
+  projectId: UUID;
+  /**
+   * Display name for the saved view
+   */
+  name: string;
+  /**
+   * Optional description
+   */
+  description?: string;
+  /**
+   * Whether this view is visible to all project members
+   */
+  isPublic: boolean;
+  /**
+   * Layout type for this view
+   */
+  layout: ViewLayout;
+  /**
+   * Full view configuration as JSON (filters, grouping, sorting, display properties)
+   */
+  configuration: string;
+  /**
+   * ID of the user who created this view
+   */
+  createdBy?: string;
+};
+export enum CycleStatus {
+  Upcoming = 'Upcoming',
+  Active = 'Active',
+  Completed = 'Completed',
+}
+
+/**
+ * A time-boxed iteration (sprint) within a project
+ */
+export type Cycle = SoftDeletableEntity & {
+  /**
+   * Parent project this cycle belongs to
+   */
+  projectId: UUID;
+  /**
+   * Human-readable cycle name (e.g., Sprint 1)
+   */
+  name: string;
+  /**
+   * Optional description of sprint goals
+   */
+  description?: string;
+  /**
+   * Current lifecycle status
+   */
+  status: CycleStatus;
+  /**
+   * Sprint start date
+   */
+  startDate?: any;
+  /**
+   * Sprint end date
+   */
+  endDate?: any;
+};
+export enum ModuleStatus {
+  Backlog = 'Backlog',
+  Planned = 'Planned',
+  InProgress = 'InProgress',
+  Paused = 'Paused',
+  Completed = 'Completed',
+  Cancelled = 'Cancelled',
+}
+
+/**
+ * An epic-like grouping of related work items within a project
+ */
+export type PmModule = SoftDeletableEntity & {
+  /**
+   * Parent project this module belongs to
+   */
+  projectId: UUID;
+  /**
+   * Human-readable module name
+   */
+  name: string;
+  /**
+   * Optional description of module scope and goals
+   */
+  description?: string;
+  /**
+   * Current lifecycle status
+   */
+  status: ModuleStatus;
+  /**
+   * Optional lead/owner for this module
+   */
+  leadId?: string;
+  /**
+   * Module start date
+   */
+  startDate?: any;
+  /**
+   * Module end date
+   */
+  endDate?: any;
+};
+
+/**
+ * A wiki/documentation page within a project
+ */
+export type Page = SoftDeletableEntity & {
+  /**
+   * Project this page belongs to
+   */
+  projectId: UUID;
+  /**
+   * Page title
+   */
+  title: string;
+  /**
+   * Rich text content stored as TipTap JSON (ProseMirror document model)
+   */
+  content?: string;
+  /**
+   * Parent page ID for hierarchical nesting (null for top-level pages)
+   */
+  parentId?: UUID;
+  /**
+   * Display order among sibling pages
+   */
+  sortOrder: float64;
+  /**
+   * Whether this page is marked as a favorite
+   */
+  isFavorite: boolean;
+};
+
+/**
+ * An immutable content snapshot of a page at a specific version
+ */
+export type PageVersion = BaseEntity & {
+  /**
+   * Page this version belongs to
+   */
+  pageId: UUID;
+  /**
+   * Sequential version number within the page
+   */
+  versionNumber: number;
+  /**
+   * Page title at this version
+   */
+  title: string;
+  /**
+   * Full content snapshot as TipTap JSON
+   */
+  content?: string;
+};
+export enum EpicStatus {
+  Backlog = 'Backlog',
+  Planned = 'Planned',
+  InProgress = 'InProgress',
+  Completed = 'Completed',
+  Cancelled = 'Cancelled',
+}
+
+/**
+ * A large container within a project that groups related work items
+ */
+export type Epic = SoftDeletableEntity & {
+  /**
+   * Project this epic belongs to
+   */
+  projectId: UUID;
+  /**
+   * Epic name
+   */
+  name: string;
+  /**
+   * Optional description of the epic's scope and goals
+   */
+  description?: string;
+  /**
+   * Current lifecycle status
+   */
+  status: EpicStatus;
+  /**
+   * Planned start date
+   */
+  startDate?: any;
+  /**
+   * Target end date
+   */
+  endDate?: any;
+};
+
+/**
+ * File attachment metadata for a work item — file stored on local filesystem
+ */
+export type PmAttachment = SoftDeletableEntity & {
+  /**
+   * Work item this attachment belongs to
+   */
+  workItemId: UUID;
+  /**
+   * Original filename as provided by the user
+   */
+  filename: string;
+  /**
+   * MIME type of the file (validated via magic bytes)
+   */
+  mimeType: string;
+  /**
+   * File size in bytes (max 25MB = 26214400)
+   */
+  fileSize: number;
+  /**
+   * Absolute path to the file on disk
+   */
+  storagePath: string;
+};
+export enum IntakeStatus {
+  Pending = 'Pending',
+  Accepted = 'Accepted',
+  Declined = 'Declined',
+  Duplicate = 'Duplicate',
+}
+
+/**
+ * Incoming request awaiting triage — separate from committed WorkItems
+ */
+export type IntakeItem = SoftDeletableEntity & {
+  /**
+   * Project this intake item belongs to
+   */
+  projectId: UUID;
+  /**
+   * Title of the incoming request
+   */
+  title: string;
+  /**
+   * Description of the incoming request (plain text or rich text JSON)
+   */
+  description?: string;
+  /**
+   * Source of the intake (e.g., 'manual', 'email', 'api')
+   */
+  source: string;
+  /**
+   * Triage status of the intake item
+   */
+  status: IntakeStatus;
+  /**
+   * Notes from the triage process (AI or human)
+   */
+  triageNotes?: string;
+  /**
+   * Suggested state ID from AI triage
+   */
+  suggestedStateId?: UUID;
+  /**
+   * Suggested priority from AI triage
+   */
+  suggestedPriority?: string;
+  /**
+   * Suggested label IDs from AI triage (JSON array)
+   */
+  suggestedLabels?: string;
+  /**
+   * Suggested assignee ID from AI triage
+   */
+  suggestedAssigneeId?: string;
+  /**
+   * ID of the work item created on acceptance
+   */
+  resultingWorkItemId?: UUID;
+  /**
+   * Reason for declining the intake item
+   */
+  declineReason?: string;
+  /**
+   * ID of the existing work item this is a duplicate of
+   */
+  duplicateOfWorkItemId?: UUID;
+};
+export enum PmNotificationType {
+  Assignment = 'Assignment',
+  Mention = 'Mention',
+  StateChange = 'StateChange',
+  Comment = 'Comment',
+  DueDateApproaching = 'DueDateApproaching',
+}
+
+/**
+ * In-app notification for project management events
+ */
+export type PmNotification = SoftDeletableEntity & {
+  /**
+   * Project this notification belongs to
+   */
+  projectId: UUID;
+  /**
+   * User ID of the notification recipient
+   */
+  recipientId: string;
+  /**
+   * Type of notification event
+   */
+  type: PmNotificationType;
+  /**
+   * Short title for the notification
+   */
+  title: string;
+  /**
+   * Detailed notification body text
+   */
+  body?: string;
+  /**
+   * Whether the notification has been read
+   */
+  isRead: boolean;
+  /**
+   * Whether the notification has been archived
+   */
+  isArchived: boolean;
+  /**
+   * ID of the referenced entity (work item, comment, etc.)
+   */
+  referenceId?: UUID;
+  /**
+   * Type of the referenced entity (e.g., 'WorkItem', 'Comment', 'IntakeItem')
+   */
+  referenceType?: string;
+};
+
+/**
+ * A user account in the project management system
+ */
+export type PmUser = SoftDeletableEntity & {
+  /**
+   * User's email address — unique identifier for login
+   */
+  email: string;
+  /**
+   * Bcrypt-hashed password — never exposed to presentation layer
+   */
+  passwordHash: string;
+  /**
+   * Display name shown in UI (avatars, assignments, comments)
+   */
+  displayName: string;
+  /**
+   * Whether this is the default system user created for single-user backward compatibility
+   */
+  isSystemUser: boolean;
+};
+
+/**
+ * An authenticated user session with a secure token and expiry
+ */
+export type PmSession = SoftDeletableEntity & {
+  /**
+   * ID of the user who owns this session
+   */
+  userId: UUID;
+  /**
+   * Secure session token used for authentication
+   */
+  token: string;
+  /**
+   * When this session expires — after this time, the session is invalid
+   */
+  expiresAt: any;
+};
+export enum ProjectRole {
+  Admin = 'Admin',
+  Member = 'Member',
+  Guest = 'Guest',
+}
+
+/**
+ * Links a user to a project with a specific role for access control
+ */
+export type PmProjectMember = SoftDeletableEntity & {
+  /**
+   * ID of the project this membership belongs to
+   */
+  projectId: UUID;
+  /**
+   * ID of the user who is a member
+   */
+  userId: UUID;
+  /**
+   * Role determining the user's permissions within the project
+   */
+  role: ProjectRole;
+};
+export enum AuditAction {
+  UserRegistered = 'UserRegistered',
+  UserLoggedIn = 'UserLoggedIn',
+  UserLoggedOut = 'UserLoggedOut',
+  SessionInvalidated = 'SessionInvalidated',
+  MemberAdded = 'MemberAdded',
+  MemberRemoved = 'MemberRemoved',
+  RoleChanged = 'RoleChanged',
+  ProjectSettingsChanged = 'ProjectSettingsChanged',
+  ProjectDeleted = 'ProjectDeleted',
+  BulkOperation = 'BulkOperation',
+}
+
+/**
+ * Immutable audit log entry recording a security-relevant action
+ */
+export type PmAuditLog = BaseEntity & {
+  /**
+   * ID of the user who performed the action
+   */
+  actorId: UUID;
+  /**
+   * Category of the audited action
+   */
+  action: AuditAction;
+  /**
+   * ID of the target entity (project, user, etc.) — optional
+   */
+  targetId?: UUID;
+  /**
+   * Type of the target entity (e.g., 'PmProject', 'PmUser', 'PmProjectMember')
+   */
+  targetType?: string;
+  /**
+   * JSON metadata with action-specific details (old/new values, etc.)
+   */
+  metadata?: string;
+  /**
+   * IP address or client identifier of the actor — optional
+   */
+  ipAddress?: string;
+};
 
 /**
  * Single installation suggestion for a tool
@@ -1898,6 +2584,117 @@ export type Evidence = {
    * Optional reference to the task this evidence proves
    */
   taskRef?: string;
+};
+
+/**
+ * An immutable record of a field change on a work item
+ */
+export type ActivityEntry = BaseEntity & {
+  /**
+   * Work item this activity belongs to
+   */
+  workItemId: UUID;
+  /**
+   * Name of the field that changed (e.g., 'state', 'priority', 'title')
+   */
+  fieldName: string;
+  /**
+   * Previous value as text (null for creation events)
+   */
+  oldValue?: string;
+  /**
+   * New value as text
+   */
+  newValue?: string;
+  /**
+   * ID of the actor who made the change
+   */
+  actorId: string;
+};
+export enum CustomPropertyType {
+  Text = 'Text',
+  Number = 'Number',
+  Dropdown = 'Dropdown',
+  Boolean = 'Boolean',
+  Date = 'Date',
+  MemberPicker = 'MemberPicker',
+}
+
+/**
+ * A user-defined custom field schema for work items in a project
+ */
+export type CustomProperty = SoftDeletableEntity & {
+  /**
+   * Project this property belongs to
+   */
+  projectId: UUID;
+  /**
+   * Display name for the property
+   */
+  name: string;
+  /**
+   * Data type of the property value
+   */
+  propertyType: CustomPropertyType;
+  /**
+   * JSON array of options for Dropdown type (e.g., '["Option A", "Option B"]')
+   */
+  options?: string;
+  /**
+   * Whether this property is required on work items
+   */
+  isRequired: boolean;
+  /**
+   * Position in the property list for ordering
+   */
+  displayOrder: number;
+};
+export enum RelationType {
+  Blocking = 'Blocking',
+  RelatesTo = 'RelatesTo',
+  Duplicate = 'Duplicate',
+  StartsBefore = 'StartsBefore',
+  FinishesBefore = 'FinishesBefore',
+}
+
+/**
+ * A directional relationship between two work items
+ */
+export type WorkItemRelation = BaseEntity & {
+  /**
+   * Source work item ID (the 'from' side)
+   */
+  sourceWorkItemId: UUID;
+  /**
+   * Target work item ID (the 'to' side)
+   */
+  targetWorkItemId: UUID;
+  /**
+   * Type of relationship
+   */
+  relationType: RelationType;
+};
+
+/**
+ * A record of time logged against a work item
+ */
+export type TimeEntry = BaseEntity & {
+  /**
+   * Work item this time entry is logged against
+   */
+  workItemId: UUID;
+  /**
+   * Duration of work in minutes
+   */
+  durationMinutes: number;
+  /**
+   * Optional note describing the work performed
+   */
+  note?: string;
+  /**
+   * When the work was performed
+   */
+  loggedAt: any;
 };
 export enum AgentStatus {
   Idle = 'Idle',
@@ -2222,8 +3019,6 @@ export type AgentDefinition = {
    */
   description: string;
 };
-export type float = any;
-export type float64 = float;
 
 /**
  * Execution record for a single agent graph node. Tracks timing, prompt, token usage, and outcome.
