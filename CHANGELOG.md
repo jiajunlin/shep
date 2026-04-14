@@ -1,3 +1,10 @@
+# [1.187.0](https://github.com/shep-ai/shep/compare/v1.186.1...v1.187.0) (2026-04-14)
+
+
+### Features
+
+* one-click cloud deploy for applications (spec 089) ([#554](https://github.com/shep-ai/shep/issues/554)) ([29342f8](https://github.com/shep-ai/shep/commit/29342f80df4a4776b7142246cabb4552da9502e3))
+
 ## [1.186.1](https://github.com/shep-ai/shep/compare/v1.186.0...v1.186.1) (2026-04-14)
 
 
