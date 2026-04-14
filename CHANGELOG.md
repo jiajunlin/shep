@@ -1,3 +1,10 @@
+## [1.187.2](https://github.com/shep-ai/shep/compare/v1.187.1...v1.187.2) (2026-04-14)
+
+
+### Bug Fixes
+
+* **web:** force-stop stuck workflow steps + bundled deploy/chat reliability fixes ([#561](https://github.com/shep-ai/shep/issues/561)) ([ec1e95c](https://github.com/shep-ai/shep/commit/ec1e95cb001440b4c281e0cc1b5523c48161a225)), closes [#560](https://github.com/shep-ai/shep/issues/560) [#560](https://github.com/shep-ai/shep/issues/560)
+
 ## [1.187.1](https://github.com/shep-ai/shep/compare/v1.187.0...v1.187.1) (2026-04-14)
 
 # [1.187.0](https://github.com/shep-ai/shep/compare/v1.186.1...v1.187.0) (2026-04-14)
