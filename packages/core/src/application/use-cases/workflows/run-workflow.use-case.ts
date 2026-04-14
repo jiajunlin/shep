@@ -32,9 +32,10 @@ import { injectable, inject } from 'tsyringe';
 import type { IWorkflowStepRepository } from '../../ports/output/repositories/workflow-step-repository.interface.js';
 import type { IInteractiveSessionService } from '../../ports/output/services/interactive-session-service.interface.js';
 import type { IInteractiveSessionRepository } from '../../ports/output/repositories/interactive-session-repository.interface.js';
+import type { ILogger } from '../../ports/output/services/logger.interface.js';
 import type { SendInteractiveMessageUseCase } from '../interactive/send-interactive-message.use-case.js';
 import { WorkflowStepStatus, type WorkflowStep } from '../../../domain/generated/output.js';
-import type { WorkflowDefinition } from '../../workflows/application-creation.workflow.js';
+import type { WorkflowDefinition } from '../applications/application-creation.workflow.js';
 
 /** Per-step usage snapshot. All fields are cumulative session totals
  *  captured BEFORE or AFTER a step runs; a diff between two snapshots
@@ -100,7 +101,9 @@ export class RunWorkflowUseCase {
     @inject('SendInteractiveMessageUseCase')
     private readonly sendMessage: SendInteractiveMessageUseCase,
     @inject('IInteractiveSessionRepository')
-    private readonly sessionRepoForUsage: IInteractiveSessionRepository
+    private readonly sessionRepoForUsage: IInteractiveSessionRepository,
+    @inject('ILogger')
+    private readonly logger: ILogger
   ) {}
 
   async execute(input: RunWorkflowInput): Promise<void> {
@@ -144,8 +147,9 @@ export class RunWorkflowUseCase {
     // Resolve the session id — newly booted, so poll briefly.
     const sessionId = await this.resolveSessionId(input.featureId);
     if (!sessionId) {
-      // eslint-disable-next-line no-console
-      console.warn(`[run-workflow] no session id for ${input.featureId}`);
+      this.logger.warn('[run-workflow] no session id for feature', {
+        featureId: input.featureId,
+      });
       return;
     }
 
