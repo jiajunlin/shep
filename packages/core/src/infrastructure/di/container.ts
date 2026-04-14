@@ -30,6 +30,21 @@ import type { IAgentExecutorFactory } from '../../application/ports/output/agent
 import type { IFeatureRepository } from '../../application/ports/output/repositories/feature-repository.interface.js';
 import { InteractiveSessionService } from '../services/interactive/interactive-session.service.js';
 import { FeatureContextBuilder } from '../services/interactive/feature-context.builder.js';
+import { SessionRegistry } from '../services/interactive/core/session-registry.js';
+import { StreamEventDispatcher } from '../services/interactive/core/stream-event-dispatcher.js';
+import { SessionPersistence } from '../services/interactive/core/session-persistence.js';
+import { SettingsProviderAdapter } from '../services/interactive/lifecycle/settings-provider.adapter.js';
+import { AgentConfigResolver } from '../services/interactive/lifecycle/agent-config.resolver.js';
+import { AgentStreamConsumer } from '../services/interactive/runtime/agent-stream.consumer.js';
+import { BootPromptResolver } from '../services/interactive/lifecycle/boot-prompt.resolver.js';
+import { SessionBootstrapper } from '../services/interactive/lifecycle/session-bootstrapper.js';
+import { SessionTerminator } from '../services/interactive/lifecycle/session-terminator.js';
+import { TurnExecutor } from '../services/interactive/runtime/turn.executor.js';
+import { UserInteractionCoordinator } from '../services/interactive/runtime/user-interaction.coordinator.js';
+import { MessageDispatcher } from '../services/interactive/api/message-dispatcher.js';
+import { ChatStateAssembler } from '../services/interactive/api/chat-state.assembler.js';
+import { WorkflowHooks } from '../services/interactive/api/workflow-hooks.js';
+import type { ILogger } from '../../application/ports/output/services/logger.interface.js';
 
 // Topic-grouped registration modules
 import { registerRepositories } from './modules/register-repositories.js';
@@ -106,13 +121,106 @@ export async function initializeContainer(): Promise<typeof container> {
   const interactiveMessageRepo = container.resolve<IInteractiveMessageRepository>(
     'IInteractiveMessageRepository'
   );
+  const sessionRegistry = new SessionRegistry();
+  const streamEventDispatcher = new StreamEventDispatcher(sessionRegistry);
+  // SessionPersistence is a process-wide singleton so its monotonic
+  // `createdAt` counter is shared across every write. See
+  // `core/session-persistence.ts` for why strictly-increasing timestamps
+  // matter (tool_use / tool_result collisions).
+  const sessionPersistence = new SessionPersistence(
+    interactiveMessageRepo,
+    interactiveSessionRepo,
+    sessionRegistry,
+    streamEventDispatcher
+  );
+  // Settings-provider port + agent-config resolver. The adapter is the
+  // one legitimate place the `settings.service` singleton is called —
+  // everywhere else consults it through the injected port.
+  const settingsProvider = new SettingsProviderAdapter();
+  const agentConfigResolver = new AgentConfigResolver(settingsProvider);
+
+  const logger: ILogger = {
+    // eslint-disable-next-line no-console
+    debug: (msg, meta) => console.debug(`[shep] ${msg}`, meta ?? ''),
+    // eslint-disable-next-line no-console
+    info: (msg, meta) => console.info(`[shep] ${msg}`, meta ?? ''),
+    // eslint-disable-next-line no-console
+    warn: (msg, meta) => console.warn(`[shep] ${msg}`, meta ?? ''),
+    // eslint-disable-next-line no-console
+    error: (msg, meta) => console.error(`[shep] ${msg}`, meta ?? ''),
+  };
+  const streamConsumer = new AgentStreamConsumer(sessionPersistence, streamEventDispatcher, logger);
+  const featureRepository = container.resolve<IFeatureRepository>('IFeatureRepository');
+  const agentExecutorFactory = container.resolve<IAgentExecutorFactory>('IAgentExecutorFactory');
+  const featureContextBuilder = new FeatureContextBuilder();
+  const bootPromptResolver = new BootPromptResolver(featureRepository, featureContextBuilder);
+  const interactionCoordinator = new UserInteractionCoordinator(
+    sessionPersistence,
+    streamEventDispatcher,
+    logger,
+    sessionRegistry
+  );
+  const bootstrapper = new SessionBootstrapper(
+    interactiveSessionRepo,
+    sessionRegistry,
+    sessionPersistence,
+    streamEventDispatcher,
+    bootPromptResolver,
+    streamConsumer,
+    agentExecutorFactory,
+    agentConfigResolver,
+    interactionCoordinator,
+    logger
+  );
+  const terminator = new SessionTerminator(
+    sessionRegistry,
+    sessionPersistence,
+    streamEventDispatcher,
+    logger,
+    interactiveMessageRepo,
+    workflowStepRepoBoot
+  );
+  const turnExecutor = new TurnExecutor(
+    interactiveSessionRepo,
+    sessionRegistry,
+    sessionPersistence,
+    streamConsumer,
+    logger,
+    streamEventDispatcher
+  );
+  const messageDispatcher = new MessageDispatcher(
+    interactiveSessionRepo,
+    interactiveMessageRepo,
+    sessionRegistry,
+    sessionPersistence,
+    bootstrapper,
+    terminator,
+    turnExecutor
+  );
+  const chatStateAssembler = new ChatStateAssembler(
+    interactiveMessageRepo,
+    interactiveSessionRepo,
+    workflowStepRepoBoot,
+    sessionRegistry
+  );
+  const workflowHooks = new WorkflowHooks(sessionRegistry, streamEventDispatcher);
   const interactiveSessionService = new InteractiveSessionService(
     interactiveSessionRepo,
     interactiveMessageRepo,
-    container.resolve<IAgentExecutorFactory>('IAgentExecutorFactory'),
-    container.resolve<IFeatureRepository>('IFeatureRepository'),
-    new FeatureContextBuilder(),
-    workflowStepRepoBoot
+    featureRepository,
+    featureContextBuilder,
+    workflowStepRepoBoot,
+    sessionRegistry,
+    streamEventDispatcher,
+    sessionPersistence,
+    logger,
+    bootstrapper,
+    terminator,
+    turnExecutor,
+    interactionCoordinator,
+    messageDispatcher,
+    chatStateAssembler,
+    workflowHooks
   );
   container.registerInstance<IInteractiveSessionService>(
     'IInteractiveSessionService',
