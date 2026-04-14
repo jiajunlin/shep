@@ -1,3 +1,10 @@
+# [1.186.0](https://github.com/shep-ai/shep/compare/v1.185.0...v1.186.0) (2026-04-14)
+
+
+### Features
+
+* **config:** unify branding and reduce contributor onboarding friction ([#556](https://github.com/shep-ai/shep/issues/556)) ([0327d23](https://github.com/shep-ai/shep/commit/0327d23c965282036c9f5fa343e1118b335d2e25))
+
 # [1.185.0](https://github.com/shep-ai/shep/compare/v1.184.0...v1.185.0) (2026-04-14)
 
 
