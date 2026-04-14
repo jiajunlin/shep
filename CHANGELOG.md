@@ -1,3 +1,11 @@
+# [1.184.0](https://github.com/shep-ai/shep/compare/v1.183.0...v1.184.0) (2026-04-14)
+
+
+### Features
+
+* **agents:** add multi-provider support with cline agentic executor ([#544](https://github.com/shep-ai/shep/issues/544)) ([d05e962](https://github.com/shep-ai/shep/commit/d05e96264388c5293b05819845dd77053b97e477))
+* **specs:** add plane-like project management capabilities to shep ([#552](https://github.com/shep-ai/shep/issues/552)) ([a54d250](https://github.com/shep-ai/shep/commit/a54d250e32f96c763d0d7adde767afc17115e970))
+
 # [1.183.0](https://github.com/shep-ai/shep/compare/v1.182.1...v1.183.0) (2026-04-13)
 
 
