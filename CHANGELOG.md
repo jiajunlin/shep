@@ -1,3 +1,10 @@
+## [1.186.1](https://github.com/shep-ai/shep/compare/v1.186.0...v1.186.1) (2026-04-14)
+
+
+### Bug Fixes
+
+* application creation flow, tracker UX, and scaffolding reliability ([#559](https://github.com/shep-ai/shep/issues/559)) ([e3034c1](https://github.com/shep-ai/shep/commit/e3034c1dd1bcc274f5e0af14f172940abc42abd9))
+
 # [1.186.0](https://github.com/shep-ai/shep/compare/v1.185.0...v1.186.0) (2026-04-14)
 
 
