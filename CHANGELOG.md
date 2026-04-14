@@ -1,3 +1,10 @@
+## [1.187.3](https://github.com/shep-ai/shep/compare/v1.187.2...v1.187.3) (2026-04-14)
+
+
+### Bug Fixes
+
+* **web:** application card live preview and consistent title ([#562](https://github.com/shep-ai/shep/issues/562)) ([81ebd9a](https://github.com/shep-ai/shep/commit/81ebd9a6461b45efd84aac6a08506f5276e879f9))
+
 ## [1.187.2](https://github.com/shep-ai/shep/compare/v1.187.1...v1.187.2) (2026-04-14)
 
 
