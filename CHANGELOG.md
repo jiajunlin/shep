@@ -1,3 +1,5 @@
+## [1.187.1](https://github.com/shep-ai/shep/compare/v1.187.0...v1.187.1) (2026-04-14)
+
 # [1.187.0](https://github.com/shep-ai/shep/compare/v1.186.1...v1.187.0) (2026-04-14)
 
 
