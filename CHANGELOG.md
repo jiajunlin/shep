@@ -1,3 +1,10 @@
+# [1.188.0](https://github.com/shep-ai/shep/compare/v1.187.3...v1.188.0) (2026-04-15)
+
+
+### Features
+
+* **web:** scaffolding progress tracker + dark-mode card surface lift ([#564](https://github.com/shep-ai/shep/issues/564)) ([06567cb](https://github.com/shep-ai/shep/commit/06567cb711059bff7c4f1975ae5f1ff26baed0ab)), closes [#563](https://github.com/shep-ai/shep/issues/563) [#ffffff](https://github.com/shep-ai/shep/issues/ffffff) [#ffffff](https://github.com/shep-ai/shep/issues/ffffff) [#0a0a0a](https://github.com/shep-ai/shep/issues/0a0a0a) [#0a0a0a](https://github.com/shep-ai/shep/issues/0a0a0a) [#111827](https://github.com/shep-ai/shep/issues/111827) [#111827](https://github.com/shep-ai/shep/issues/111827) [#0a0a0a](https://github.com/shep-ai/shep/issues/0a0a0a) [#171717](https://github.com/shep-ai/shep/issues/171717) [#262626](https://github.com/shep-ai/shep/issues/262626)
+
 ## [1.187.3](https://github.com/shep-ai/shep/compare/v1.187.2...v1.187.3) (2026-04-14)
 
 
