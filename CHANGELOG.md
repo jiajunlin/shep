@@ -1,3 +1,10 @@
+# [1.189.0](https://github.com/shep-ai/shep/compare/v1.188.0...v1.189.0) (2026-04-20)
+
+
+### Features
+
+* **web:** chat timeline overlay + zero-brain Get Online + unified activity log ([#565](https://github.com/shep-ai/shep/issues/565)) ([b48e643](https://github.com/shep-ai/shep/commit/b48e643dffedaeb683b18aa352f2660007a49802)), closes [Hi#level](https://github.com/Hi/issues/level) [hi#level](https://github.com/hi/issues/level)
+
 # [1.188.0](https://github.com/shep-ai/shep/compare/v1.187.3...v1.188.0) (2026-04-15)
 
 
