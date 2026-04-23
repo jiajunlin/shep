@@ -3,18 +3,20 @@ feature:
   name: 'apps-only-surface'
   number: 91
   branch: 'feat/091-apps-only-surface'
-  lifecycle: 'implementation'
+  lifecycle: 'complete'
   createdAt: '2026-04-20T16:42:44Z'
 
 status:
-  phase: 'ready-to-implement'
+  phase: 'complete'
   progress:
-    completed: 0
+    completed: 6
     total: 6
-    percentage: 0
+    percentage: 100
   currentTask: null
-  lastUpdated: '2026-04-20T16:42:44Z'
-  lastUpdatedBy: 'shep-kit:new-feature-fast'
+  lastUpdated: '2026-04-23T12:39:37Z'
+  lastUpdatedBy: 'shep-kit:merged'
+
+mergedAt: '2026-04-23T12:39:37Z'
 
 validation:
   lastRun: null
@@ -36,6 +38,9 @@ checkpoints:
   - phase: 'plan-complete'
     completedAt: '2026-04-20T16:42:44Z'
     completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'feature-merged'
+    completedAt: '2026-04-23T12:39:37Z'
+    completedBy: 'shep-kit:merged'
 
 errors:
   current: null
