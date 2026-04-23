@@ -81,6 +81,14 @@ async function main() {
   const distDir = path.join(root, 'dist');
   const externals = collectExternalDeps();
 
+  // Compile-time shell variant. When `SHEP_SHELL_VARIANT=apps-only` is
+  // set at build time (e.g. from `pnpm build:apps-only:*`), we bake the
+  // string into the bundle so the packaged app launches into the
+  // apps-only surface without requiring the env var at runtime. The
+  // full build leaves `process.env.SHEP_SHELL_VARIANT` untouched so
+  // runtime env still works (e.g. `pnpm apps:dev`).
+  const buildVariant = process.env.SHEP_SHELL_VARIANT === 'apps-only' ? 'apps-only' : 'full';
+  console.log(`Build variant: ${buildVariant}`);
   console.log(`Externalizing ${externals.length} packages`);
 
   // Build main process entry point
@@ -118,6 +126,12 @@ async function main() {
       'import.meta.dirname': '__dirname',
       'import.meta.filename': '__filename',
       'import.meta.url': '__shep_import_meta_url',
+      // Bake the build-time shell variant into the bundle so the
+      // apps-only binary launches into `/applications` without needing
+      // `SHEP_SHELL_VARIANT` set in the user's environment. esbuild
+      // performs a literal substitution — the string must be a JSON
+      // literal, not a bare identifier.
+      'process.env.SHEP_SHELL_VARIANT': JSON.stringify(buildVariant),
     },
     banner: {
       js: [
@@ -225,7 +239,72 @@ async function main() {
     console.log('Copied scaffolding templates to dist/templates/');
   }
 
+  // Sanity-check: every top-level `require(...)` of a node-module in
+  // the bundled main.cjs MUST be declared in the electron package's
+  // `dependencies`. Otherwise electron-builder will produce an
+  // installer whose packaged `node_modules` lacks the module, and the
+  // app dies on launch with:
+  //   Error: Cannot find module '@some/missing-dep'
+  // This check catches the miss at build time (where it's cheap to
+  // fix) rather than after a full CI packaging run.
+  await checkBundledRequires(path.join(distDir, 'main.cjs'));
+
   console.log('Electron build complete.');
+}
+
+/**
+ * Scan the bundled main.cjs for `require("module")` / `require('module')`
+ * calls that reference external (bare-specifier) modules, and verify
+ * every one of them is declared in `packages/electron/package.json`'s
+ * `dependencies`. Skips Node built-ins and the `electron` runtime.
+ *
+ * Bare-specifier detection: a require string is EXTERNAL if it does
+ * NOT start with `.` / `/` / `node:` and is not `electron`. Scoped
+ * packages (`@scope/name`) collapse to `@scope/name` for comparison.
+ */
+async function checkBundledRequires(bundlePath) {
+  if (!existsSync(bundlePath)) return;
+  // Pull the authoritative list of Node built-in modules from Node's
+  // own module API so the check stays accurate as Node evolves.
+  const { builtinModules } = await import('node:module');
+  const builtins = new Set(builtinModules);
+  const src = readFileSync(bundlePath, 'utf8');
+  const re = /require\((['"])([^'"\n]+)\1\)/g;
+  const electronPkg = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8'));
+  const declared = new Set(Object.keys(electronPkg.dependencies ?? {}));
+  const missing = new Set();
+  // Known false positives: require() calls that appear inside template
+  // strings (e.g. agent prompt text demonstrating Node snippets). The
+  // regex scan is string-based and can't distinguish code from string
+  // literals, so we allowlist specs that are documented to live in
+  // prompt text only. Add new entries with a source pointer.
+  const knownFalsePositives = new Set([
+    // evidence-prompts.ts — `require('playwright')` inside a node -e snippet
+    'playwright',
+  ]);
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    const spec = m[2];
+    if (spec.startsWith('.') || spec.startsWith('/')) continue;
+    if (spec === 'electron') continue;
+    const noProto = spec.replace(/^node:/, '');
+    if (builtins.has(noProto)) continue;
+    // Collapse `pkg/sub/path` → `pkg` (or `@scope/pkg/sub` → `@scope/pkg`).
+    const pkgName = spec.startsWith('@')
+      ? spec.split('/').slice(0, 2).join('/')
+      : spec.split('/')[0];
+    if (knownFalsePositives.has(pkgName)) continue;
+    if (!declared.has(pkgName)) missing.add(pkgName);
+  }
+  if (missing.size > 0) {
+    console.error(
+      '\nBundled main.cjs requires modules NOT declared in packages/electron/package.json:\n' +
+        [...missing].map((d) => `  - ${d}`).join('\n') +
+        '\n\nAdd them to `dependencies` so electron-builder packages them into the installer.\n'
+    );
+    process.exit(1);
+  }
+  console.log('All bundled requires are declared in electron dependencies.');
 }
 
 main().catch((err) => {

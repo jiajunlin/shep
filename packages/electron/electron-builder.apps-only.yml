@@ -1,8 +1,17 @@
-# electron-builder configuration
+# electron-builder configuration — apps-only variant
+#
+# Slim desktop surface launching directly into /applications. Bundled
+# from the SAME Electron package as the full build; the build-time
+# `SHEP_SHELL_VARIANT=apps-only` env var (read by `scripts/build.mjs`)
+# bakes the variant into the main bundle so the packaged app starts
+# on the apps-only shell without runtime configuration.
+#
+# The separate `appId` + `productName` + output directory keep the two
+# binaries installable side-by-side on a developer's machine.
 # Docs: https://www.electron.build/configuration.html
 
-appId: 'ai.shep.desktop'
-productName: 'Shep'
+appId: 'ai.shep.apps'
+productName: 'Shep Apps'
 copyright: 'Copyright © 2024-2026 Shep AI'
 
 # Electron runtime version. Pinned so packaging from the staged tree
@@ -10,13 +19,11 @@ copyright: 'Copyright © 2024-2026 Shep AI'
 # from the electron devDependency that `--prod` intentionally strips.
 electronVersion: '36.9.5'
 
-# The compiled JS output directory
 directories:
   buildResources: 'resources'
-  output: 'release'
+  output: 'release-apps-only'
   app: '.'
 
-# Use the compiled JS entry point
 files:
   - 'dist/**/*'
   - 'resources/**/*'
@@ -29,14 +36,12 @@ files:
   - '!src/**/*'
   - '!scripts/**/*'
   - '!tsconfig*.json'
-  - '!electron-builder.yml'
+  - '!electron-builder*.yml'
   - '!**/*.ts'
   - '!dist/**/*.map'
 
-# Rebuild native modules (better-sqlite3) for Electron's Node.js ABI
 npmRebuild: true
 
-# Native .node binaries cannot load from inside ASAR archives
 asar: true
 asarUnpack:
   - '**/node_modules/better-sqlite3/**'
@@ -44,9 +49,9 @@ asarUnpack:
   - '**/node_modules/file-uri-to-path/**'
 
 # Copy the pre-built web UI into the packaged app's resources.
-# The staged build tree (packages/electron/staged-full/ or -apps-only/)
-# owns a local `./web` populated by scripts/package.mjs — the yaml
-# therefore references the local path, not the monorepo `../../web`.
+# The staged build tree owns a local `./web` populated by
+# scripts/package.mjs — the yaml therefore references the local path,
+# not the monorepo `../../web`.
 extraResources:
   - from: 'web'
     to: 'web'
@@ -54,7 +59,10 @@ extraResources:
       - '**/*'
       - '!**/*.map'
 
-# macOS configuration
+# Artifact filenames include the variant so the two installers are
+# visually distinct when they land in the same release folder.
+artifactName: '${productName}-${version}-${os}-${arch}.${ext}'
+
 mac:
   target:
     - target: 'dmg'
@@ -74,7 +82,6 @@ dmg:
       type: 'link'
       path: '/Applications'
 
-# Windows configuration
 win:
   target:
     - target: 'nsis'
@@ -89,7 +96,6 @@ nsis:
   installerIcon: 'resources/icon.ico'
   uninstallerIcon: 'resources/icon.ico'
 
-# Linux configuration
 linux:
   target:
     - target: 'AppImage'
@@ -97,5 +103,5 @@ linux:
         - 'x64'
   icon: 'resources/icon.png'
   category: 'Development'
-  synopsis: 'Autonomous AI Native SDLC Platform'
-  description: 'Shep — AI-powered software development lifecycle automation'
+  synopsis: 'Shep Apps — focused desktop app surface'
+  description: 'Shep Apps — create and manage AI-built applications from a focused desktop surface'
