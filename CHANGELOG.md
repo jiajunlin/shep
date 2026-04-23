@@ -1,3 +1,10 @@
+# [1.192.0](https://github.com/shep-ai/shep/compare/v1.191.0...v1.192.0) (2026-04-23)
+
+
+### Features
+
+* **agents:** add opus 4.7 support ([#572](https://github.com/shep-ai/shep/issues/572)) ([16ccc11](https://github.com/shep-ai/shep/commit/16ccc112c665ef0b8b7b230d3e9b1b28cd4790b9)), closes [#571](https://github.com/shep-ai/shep/issues/571)
+
 # [1.191.0](https://github.com/shep-ai/shep/compare/v1.190.0...v1.191.0) (2026-04-23)
 
 
