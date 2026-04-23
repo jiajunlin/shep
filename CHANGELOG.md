@@ -1,3 +1,10 @@
+# [1.193.0](https://github.com/shep-ai/shep/compare/v1.192.0...v1.193.0) (2026-04-23)
+
+
+### Features
+
+* **ci:** parallel electron apps-only build (mac/win/linux) ([#575](https://github.com/shep-ai/shep/issues/575)) ([d1b4c48](https://github.com/shep-ai/shep/commit/d1b4c480f48b5dff3c97bdcfc2a4de15ffa70cc0))
+
 # [1.192.0](https://github.com/shep-ai/shep/compare/v1.191.0...v1.192.0) (2026-04-23)
 
 
