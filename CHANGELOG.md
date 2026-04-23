@@ -1,3 +1,10 @@
+# [1.190.0](https://github.com/shep-ai/shep/compare/v1.189.0...v1.190.0) (2026-04-23)
+
+
+### Features
+
+* **web:** apps-only desktop surface (spec 091) ([#573](https://github.com/shep-ai/shep/issues/573)) ([9a8036b](https://github.com/shep-ai/shep/commit/9a8036bffd85e18053d160551615ef645276a390))
+
 # [1.189.0](https://github.com/shep-ai/shep/compare/v1.188.0...v1.189.0) (2026-04-20)
 
 
