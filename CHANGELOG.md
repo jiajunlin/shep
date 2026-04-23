@@ -1,3 +1,10 @@
+# [1.191.0](https://github.com/shep-ai/shep/compare/v1.190.0...v1.191.0) (2026-04-23)
+
+
+### Features
+
+* **web:** apps-only ux polish and safer cloud project names ([#574](https://github.com/shep-ai/shep/issues/574)) ([96b8904](https://github.com/shep-ai/shep/commit/96b8904f22c91db043a6e9c8ab75a3843f697e08))
+
 # [1.190.0](https://github.com/shep-ai/shep/compare/v1.189.0...v1.190.0) (2026-04-23)
 
 
