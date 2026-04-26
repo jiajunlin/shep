@@ -67,6 +67,13 @@ import { NodeProjectBuildService } from '../../services/build/node-project-build
 import type { IOperationLogEventBus } from '../../../application/ports/output/services/operation-log-event-bus.interface.js';
 import { InMemoryOperationLogEventBus } from '../../services/events/in-memory-operation-log-event-bus.js';
 
+// Code review (feature 090) services
+import type { IPlatformReviewService } from '../../../application/ports/output/services/platform-review-service.interface.js';
+import { GitHubReviewService } from '../../services/code-review/github-review.service.js';
+import { annotateFileDiffs } from '../../services/code-review/diff-annotation.service.js';
+import { buildReviewPrompt } from '../../services/code-review/review-prompt-builder.service.js';
+import { parseReviewOutput } from '../../services/code-review/review-output-parser.service.js';
+
 /**
  * Register core infrastructure services: validators, filesystem, git, notifications,
  * logger, tool installer, attachment storage, shep-instance, browser opener, etc.
@@ -235,4 +242,13 @@ export function registerServices(container: DependencyContainer): void {
     'IProjectBuildService',
     NodeProjectBuildService
   );
+
+  // ─── Code review (feature 090) services ─────────────────────────────
+  container.registerSingleton<IPlatformReviewService>(
+    'IPlatformReviewService',
+    GitHubReviewService
+  );
+  container.registerInstance('DiffAnnotator', annotateFileDiffs);
+  container.registerInstance('PromptBuilder', buildReviewPrompt);
+  container.registerInstance('OutputParser', parseReviewOutput);
 }

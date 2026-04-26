@@ -399,6 +399,7 @@ export function SettingsPageClient({
     reactFileManager: false,
     projects: false,
     inventory: false,
+    codeReview: false,
   };
 
   // Language state
@@ -1798,6 +1799,18 @@ export function SettingsPageClient({
               checked={flags.projects}
               onChange={(v) => {
                 const newFlags = { ...flags, projects: v };
+                setFlags(newFlags);
+                save({ featureFlags: newFlags });
+              }}
+            />
+            <SwitchRow
+              label={t('settings.featureFlags.codeReview')}
+              description={t('settings.featureFlags.codeReviewDescription')}
+              id="flag-code-review"
+              testId="switch-flag-code-review"
+              checked={flags.codeReview}
+              onChange={(v) => {
+                const newFlags = { ...flags, codeReview: v };
                 setFlags(newFlags);
                 save({ featureFlags: newFlags });
               }}
