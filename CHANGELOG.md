@@ -1,3 +1,18 @@
+# [1.194.0](https://github.com/shep-ai/shep/compare/v1.193.0...v1.194.0) (2026-04-26)
+
+
+### Bug Fixes
+
+* **web:** add code-review flag to app-shell test fixtures ([#579](https://github.com/shep-ai/shep/issues/579)) ([875f940](https://github.com/shep-ai/shep/commit/875f940339c8799f99b81aed399a738db3ab6562)), closes [#568](https://github.com/shep-ai/shep/issues/568)
+
+
+### Features
+
+* **domain:** add ai-powered code review for pr analysis and github posting ([#568](https://github.com/shep-ai/shep/issues/568)) ([32394f6](https://github.com/shep-ai/shep/commit/32394f6b2019c5fdc477f86339abf66d56f4d22a))
+* **web:** add full feature management to inventory page ([#557](https://github.com/shep-ai/shep/issues/557)) ([cbe4279](https://github.com/shep-ai/shep/commit/cbe427921045b7ac3160dd5e2d0c71a87a375b6e))
+* **web:** build-mode picker in create drawer + apps view locked to application ([#578](https://github.com/shep-ai/shep/issues/578)) ([aefb435](https://github.com/shep-ai/shep/commit/aefb435f1670c60476d02230e0044e91d84d2724))
+* **web:** default to applications and split control center routing ([#577](https://github.com/shep-ai/shep/issues/577)) ([9ef06f1](https://github.com/shep-ai/shep/commit/9ef06f122602a13e84c5d98e0c9b3fe880bc64af))
+
 # [1.193.0](https://github.com/shep-ai/shep/compare/v1.192.0...v1.193.0) (2026-04-23)
 
 
