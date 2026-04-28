@@ -1,3 +1,10 @@
+## [1.194.1](https://github.com/shep-ai/shep/compare/v1.194.0...v1.194.1) (2026-04-28)
+
+
+### Performance Improvements
+
+* **domain:** web ui performance pass — kill n+1, tune sqlite, lazy-load heavy ui chunks ([#581](https://github.com/shep-ai/shep/issues/581)) ([f18d0cb](https://github.com/shep-ai/shep/commit/f18d0cb98f98512e338666a51f7b9e1a36fccde4))
+
 # [1.194.0](https://github.com/shep-ai/shep/compare/v1.193.0...v1.194.0) (2026-04-26)
 
 
