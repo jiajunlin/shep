@@ -1,3 +1,10 @@
+## [1.194.3](https://github.com/shep-ai/shep/compare/v1.194.2...v1.194.3) (2026-04-28)
+
+
+### Bug Fixes
+
+* **agents:** kill claude subprocess if it hangs after result event ([#584](https://github.com/shep-ai/shep/issues/584)) ([4895503](https://github.com/shep-ai/shep/commit/4895503c9ce03200383b702ad8148a95092c0f67))
+
 ## [1.194.2](https://github.com/shep-ai/shep/compare/v1.194.1...v1.194.2) (2026-04-28)
 
 
