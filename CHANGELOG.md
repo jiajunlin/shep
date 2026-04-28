@@ -1,3 +1,10 @@
+## [1.194.4](https://github.com/shep-ai/shep/compare/v1.194.3...v1.194.4) (2026-04-28)
+
+
+### Bug Fixes
+
+* **web:** flip model picker dropdown upward when near bottom of viewport ([#586](https://github.com/shep-ai/shep/issues/586)) ([88b9b56](https://github.com/shep-ai/shep/commit/88b9b56022b6638279f6e074a4f9e513c2fbca33))
+
 ## [1.194.3](https://github.com/shep-ai/shep/compare/v1.194.2...v1.194.3) (2026-04-28)
 
 
