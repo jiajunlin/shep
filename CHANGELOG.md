@@ -1,3 +1,10 @@
+## [1.194.2](https://github.com/shep-ai/shep/compare/v1.194.1...v1.194.2) (2026-04-28)
+
+
+### Bug Fixes
+
+* **core:** explicit subpath exports for cloud bundlers ([c2ef7a9](https://github.com/shep-ai/shep/commit/c2ef7a9e3d8bb8eef2bbdebf83669e36df41cbbe))
+
 ## [1.194.1](https://github.com/shep-ai/shep/compare/v1.194.0...v1.194.1) (2026-04-28)
 
 
