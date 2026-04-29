@@ -1,3 +1,11 @@
+## [1.195.1](https://github.com/shep-ai/shep/compare/v1.195.0...v1.195.1) (2026-04-29)
+
+
+### Bug Fixes
+
+* **web:** make server bind address configurable via env var ([#589](https://github.com/shep-ai/shep/issues/589)) ([abfdd76](https://github.com/shep-ai/shep/commit/abfdd7639c09a46dcc75266182754851698b2038))
+* resolve github issues [#583](https://github.com/shep-ai/shep/issues/583), [#582](https://github.com/shep-ai/shep/issues/582), [#580](https://github.com/shep-ai/shep/issues/580) ([#585](https://github.com/shep-ai/shep/issues/585)) ([9e8fcfa](https://github.com/shep-ai/shep/commit/9e8fcfaf1c1d40e6084c4253a4793249e9798fd8)), closes [#584](https://github.com/shep-ai/shep/issues/584)
+
 # [1.195.0](https://github.com/shep-ai/shep/compare/v1.194.4...v1.195.0) (2026-04-29)
 
 
