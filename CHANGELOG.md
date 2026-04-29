@@ -1,3 +1,10 @@
+# [1.195.0](https://github.com/shep-ai/shep/compare/v1.194.4...v1.195.0) (2026-04-29)
+
+
+### Features
+
+* **web:** always-on skills inventory adopt-branch rebase-sync github-import ([#588](https://github.com/shep-ai/shep/issues/588)) ([95d87c2](https://github.com/shep-ai/shep/commit/95d87c2be2f6df0b77dbc1587f965bd7ccc78065))
+
 ## [1.194.4](https://github.com/shep-ai/shep/compare/v1.194.3...v1.194.4) (2026-04-28)
 
 
