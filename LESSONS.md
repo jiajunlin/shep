@@ -325,9 +325,81 @@ When the user asks to restore "the original" or "the version we had before", che
 **How this came up:** A user asked to restore the "original getting started" in the control center. The first attempt restored the prompt version (recent), but the user clarified there was an even older version. Always trace the file back through `git log --follow --oneline` and look at the version BEFORE the major UX rewrites (e.g. commits with "replace onboarding with prompt-first experience").
 
 
+## Third-Party CSS With Hardcoded Light-Theme Colors Needs ALL Layers Overridden
+
+`tabulator-tables/dist/css/tabulator_simple.css` hardcodes `background: #fff` on
+**both** `.tabulator-row` AND `.tabulator-table`. Overriding only the row leaves
+a solid white plate on the table element behind the rows — invisible in light
+mode, glaringly white in dark mode (issue #580: "white over white titles").
+
+**Rule:** when overriding a third-party stylesheet for theme support, list
+every element in the visual stack (table, tableholder, row, cell) — not just
+the one you debug first. Use the dev-tools "find all elements with
+`background-color: rgb(255,255,255)`" trick rather than guessing.
+
+```js
+[...document.querySelectorAll('*')].filter(
+  e => getComputedStyle(e).backgroundColor === 'rgb(255, 255, 255)'
+)
+```
+
+
+## Claude Agent SDK V2 — `canUseTool` Must Be ALWAYS Set, Not Gated on `onUserQuestion`
+
+The V2 session API hardcodes `allowDangerouslySkipPermissions: false`. With
+only `allowedTools` enumerated (no wildcard support in V2), every tool name
+not in the list — including dynamically discovered MCP tools like
+`mcp__atlassian__search_issues` — falls through to the SDK's permission gate
+and gets denied. If `canUseTool` is `undefined`, denial is silent and the
+agent reports the tool as unavailable (issue #582).
+
+**Rule:** install `canUseTool` unconditionally and use it as both the
+AskUserQuestion interception point AND the catch-all "allow" for unknown
+tools. Do NOT make installing the callback conditional on whether the caller
+provided `onUserQuestion`.
+
+
+## macOS Terminal Launch — `open -a Terminal /path` Is Unreliable, Use `osascript`
+
+`spawn('open', ['-a', 'Terminal', '/path'])` opens Terminal but, when
+Terminal.app is already running, the new window often lands at `$HOME`
+instead of the supplied path (issue #583, varies by Terminal preferences).
+
+**Rule:** for macOS Terminal launches, use `osascript` with an explicit
+`do script "cd '...'"` so the working directory is set programmatically
+inside the new window:
+
+```js
+spawn('osascript', [
+  '-e', `tell application "Terminal" to do script "cd '${escapeSingleQuote(p)}'; clear"`,
+  '-e', 'tell application "Terminal" to activate',
+])
+```
+
+The same `open -a` pattern is unreliable for iTerm2 and Warp too —
+they need their own URL-scheme or osascript launchers.
+
+
+## Spawn-from-Template Tokenization — Tokenize the Template, Not the Resolved Command
+
+Code that resolves a template like `"open -a Warp {dir}"` into a shell-less
+spawn invocation must NOT do `template.replace('{dir}', path).split(/\s+/)` —
+that shreds paths with spaces (`'/Users/me/My Code/repo'`) into multiple
+args (`'/Users/me/My'`, `'Code/repo'`).
+
+**Rule:** tokenize the TEMPLATE first (the placeholder is one token by
+construction), then substitute the literal path into whichever arg contains
+`{dir}`:
+
+```js
+const tokens = template.split(/\s+/);
+const [cmd, ...rest] = tokens;
+const args = rest.map(t => t.replace('{dir}', actualPath));
+```
+
+
 ## Subprocess Executor Must Not Trust Natural Exit After `[result]`
 
 The `claude` CLI emits a final `result` event over stream-json and is supposed to tear down its MCP servers and exit — but in practice it can hang for hours. Confirmed offenders, all spawned by the agent itself: `npm exec @playwright/mcp`, `npm exec @upstash/context7-mcp`, `typescript-language-server --stdio`, and any backgrounded `pnpm dev:web` / shell the agent forgot to kill. They keep stdio open and the parent claude process never closes. A worker that resolves only on `proc.on('close')` then sleeps forever — feature 92701aa8 was stuck `fast-implement` for 3+ hours after the agent had finished, committed, and pushed.
 
 **Rule:** any executor that depends on a subprocess emitting a final event must enforce a grace timer once that event is observed and SIGKILL the subprocess if it fails to exit. Don't trust the child to clean up its own children. Implemented in `claude-code-executor.service.ts` via `RESULT_TO_CLOSE_GRACE_MS = 30_000`: after seeing `type: 'result'` in stream-json, schedule a SIGKILL; the existing `proc.on('close')` handler then resolves with the already-captured result data.
-
