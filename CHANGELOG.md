@@ -4,6 +4,40 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.200.0](/compare/v1.199.0...v1.200.0) · _2026-05-03_
+
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
+
+
+
+### ✨ Features
+
+* **web:** show tech and product spec tabs through review and maintain ([#596](https://github.com/shep-ai/shep/issues/596)) ([9490e7b](https://github.com/shep-ai/shep/commit/9490e7b0c1ce8455901176350dd01b8739b6971a))
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.200.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.199.0](/compare/v1.198.0...v1.199.0) · _2026-05-03_
 
 > Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
