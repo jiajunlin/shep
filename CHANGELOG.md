@@ -1,3 +1,10 @@
+# [1.198.0](https://github.com/shep-ai/shep/compare/v1.197.0...v1.198.0) (2026-05-03)
+
+
+### Features
+
+* **web:** control-center sdd mode entry points and feature.applicationid ([#591](https://github.com/shep-ai/shep/issues/591)) ([87af425](https://github.com/shep-ai/shep/commit/87af425d5e6d3e6128db982637146f8aac5981e9))
+
 # [1.197.0](https://github.com/shep-ai/shep/compare/v1.196.1...v1.197.0) (2026-05-03)
 
 
