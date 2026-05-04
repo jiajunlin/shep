@@ -220,6 +220,7 @@ export function createDefaultSettings(): Settings {
     reactFileManager: false,
     projects: false,
     codeReview: false,
+    collaboration: false,
   };
 
   return {

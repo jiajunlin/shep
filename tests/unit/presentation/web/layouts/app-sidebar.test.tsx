@@ -44,6 +44,7 @@ const defaultFlags = {
   reactFileManager: false,
   projects: false,
   codeReview: false,
+  collaboration: false,
 };
 
 function renderWithSidebar(ui: React.ReactElement) {

@@ -74,6 +74,7 @@ describe('updateSettings', () => {
         reactFileManager: false,
         projects: false,
         codeReview: false,
+        collaboration: false,
       },
     };
     updateSettings(updated);

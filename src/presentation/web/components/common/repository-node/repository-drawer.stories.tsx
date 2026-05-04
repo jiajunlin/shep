@@ -96,6 +96,7 @@ function WithGitOpsTemplate({ data }: { data: RepositoryNodeData }) {
     reactFileManager: true,
     projects: false,
     codeReview: false,
+    collaboration: false,
   };
 
   return (

@@ -401,6 +401,7 @@ export function SettingsPageClient({
     reactFileManager: false,
     projects: false,
     codeReview: false,
+    collaboration: false,
   };
 
   // Language state
@@ -1757,6 +1758,18 @@ export function SettingsPageClient({
               checked={flags.codeReview}
               onChange={(v) => {
                 const newFlags = { ...flags, codeReview: v };
+                setFlags(newFlags);
+                save({ featureFlags: newFlags });
+              }}
+            />
+            <SwitchRow
+              label={t('settings.featureFlags.collaboration')}
+              description={t('settings.featureFlags.collaborationDescription')}
+              id="flag-collaboration"
+              testId="switch-flag-collaboration"
+              checked={flags.collaboration}
+              onChange={(v) => {
+                const newFlags = { ...flags, collaboration: v };
                 setFlags(newFlags);
                 save({ featureFlags: newFlags });
               }}

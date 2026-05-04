@@ -13,6 +13,7 @@ const defaultFeatureFlags = {
   reactFileManager: false,
   projects: false,
   codeReview: false,
+  collaboration: false,
 };
 
 const meta: Meta<typeof AppSidebar> = {

@@ -55,6 +55,7 @@ const defaultFlags = {
   reactFileManager: false,
   projects: false,
   codeReview: false,
+  collaboration: false,
 };
 
 function renderShell(children: React.ReactNode) {

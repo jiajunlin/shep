@@ -36,3 +36,24 @@ export type {
   InteractiveAgentSessionHandle,
 } from './interactive-agent-executor.interface.js';
 export type { CatalogEntry } from './model-catalog.types.js';
+export type {
+  IAgentMessageBus,
+  AgentMessageBusFilter,
+  AgentMessageHandler,
+  AgentMessageUnsubscribe,
+} from './agent-message-bus.interface.js';
+export { ALLOWED_AGENT_MESSAGE_TARGET_KINDS } from './agent-message-bus.interface.js';
+export type {
+  IAgentQuestionService,
+  IDeferredQuestionRegistry,
+  AskAgentQuestionInput,
+  AnswerAgentQuestionInput,
+  CancelAgentQuestionInput,
+  ListAgentQuestionsFilter,
+  DeferredQuestionScope,
+} from './agent-question-service.interface.js';
+export {
+  AgentQuestionTimeoutError,
+  AgentQuestionCancelledError,
+  DEFAULT_DEFERRED_QUESTION_TIMEOUT_MS,
+} from './agent-question-service.interface.js';

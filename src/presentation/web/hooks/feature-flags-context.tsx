@@ -9,6 +9,7 @@ const defaultFlags: FeatureFlagsState = {
   reactFileManager: false,
   projects: false,
   codeReview: false,
+  collaboration: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsState>(defaultFlags);

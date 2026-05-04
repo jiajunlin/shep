@@ -39,6 +39,13 @@ function createFakePhaseTimingContext(): IPhaseTimingContext {
   };
 }
 
+function createFakeActivityLog() {
+  return {
+    create: vi.fn().mockResolvedValue(undefined),
+    listByWorkItem: vi.fn().mockResolvedValue([]),
+  };
+}
+
 // --- Mock Factories ---
 
 function createMockRunRepository() {
@@ -183,7 +190,8 @@ describe('PRD Approval Iterations (Integration)', () => {
         mockTimingRepo as any,
         createFakeWorktreePaths(),
         createRealNodeHelpers(),
-        createFakePhaseTimingContext()
+        createFakePhaseTimingContext(),
+        createFakeActivityLog() as any
       );
 
       const result = await useCase.execute('run-001', 'Please add error handling');
@@ -249,7 +257,8 @@ describe('PRD Approval Iterations (Integration)', () => {
         mockFeatureRepo as any,
         mockTimingRepo as any,
         createFakeWorktreePaths(),
-        createRealNodeHelpers()
+        createRealNodeHelpers(),
+        createFakeActivityLog() as any
       );
 
       const approvalPayload: PrdApprovalPayload = {
@@ -309,7 +318,8 @@ describe('PRD Approval Iterations (Integration)', () => {
         mockFeatureRepo as any,
         mockTimingRepo as any,
         createFakeWorktreePaths(),
-        createRealNodeHelpers()
+        createRealNodeHelpers(),
+        createFakeActivityLog() as any
       );
 
       const result = await useCase.execute('run-001');
@@ -348,7 +358,8 @@ describe('PRD Approval Iterations (Integration)', () => {
         mockTimingRepo as any,
         createFakeWorktreePaths(),
         createRealNodeHelpers(),
-        createFakePhaseTimingContext()
+        createFakePhaseTimingContext(),
+        createFakeActivityLog() as any
       );
 
       // Execute 3 sequential rejections
@@ -407,7 +418,8 @@ describe('PRD Approval Iterations (Integration)', () => {
         mockTimingRepo as any,
         createFakeWorktreePaths(),
         createRealNodeHelpers(),
-        createFakePhaseTimingContext()
+        createFakePhaseTimingContext(),
+        createFakeActivityLog() as any
       );
 
       const result = await useCase.execute('run-001', 'Fix 5');

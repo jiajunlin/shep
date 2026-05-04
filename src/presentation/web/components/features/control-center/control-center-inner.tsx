@@ -44,8 +44,10 @@ import { useDrawerCloseGuard } from '@/hooks/drawer-close-guard';
 import { useViewportPersistence } from '@/hooks/use-viewport-persistence';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useFabLayout } from '@/hooks/fab-layout-context';
+import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { ControlCenterEmptyState } from './control-center-empty-state';
 import { ControlCenterOnboarding } from './control-center-onboarding';
+import { CollaborationOnboarding } from './collaboration-onboarding';
 import { NewProjectDialog } from './new-project-dialog';
 import { useControlCenterState } from './use-control-center-state';
 import { useCanvasEventListeners } from './use-canvas-event-listeners';
@@ -525,6 +527,44 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
   // ── Full-screen create prompt overlay ────────────────────────────────
   const [showCreatePrompt, setShowCreatePrompt] = useState(false);
 
+  const featureFlags = useFeatureFlags();
+
+  const collaborationApps = useMemo(
+    () =>
+      initialNodes
+        .filter((n) => n.type === 'applicationNode')
+        .map((n) => ({
+          id: n.data.id as string,
+          name: n.data.name as string,
+          kind: 'app' as const,
+        })),
+    [initialNodes]
+  );
+
+  const collaborationRepos = useMemo(
+    () =>
+      initialNodes
+        .filter((n) => n.type === 'repositoryNode')
+        .map((n) => ({
+          id: (n.data.id ?? n.id) as string,
+          name: n.data.name as string,
+          kind: 'repo' as const,
+        })),
+    [initialNodes]
+  );
+
+  const collaborationFeatures = useMemo(
+    () =>
+      initialNodes
+        .filter((n) => n.type === 'featureNode')
+        .map((n) => ({
+          id: (n.data.featureId ?? n.id) as string,
+          name: n.data.name as string,
+          kind: 'feature' as const,
+        })),
+    [initialNodes]
+  );
+
   // Derive the FAB's app context from the canvas. When exactly one
   // ApplicationNode is on the visible canvas we treat it as the scoped
   // application — surfacing the contextual "New SDD feature for <app>"
@@ -597,6 +637,17 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
         showToolbarOnEmpty={workspaceFilteredEmpty}
         emptyState={emptyStateNode}
       />
+      {/* Collaboration onboarding — top-right overlay, shown once per browser profile */}
+      {featureFlags.collaboration ? (
+        <div className="pointer-events-none absolute inset-x-0 top-14 z-10 flex justify-end px-4">
+          <CollaborationOnboarding
+            apps={collaborationApps}
+            repos={collaborationRepos}
+            features={collaborationFeatures}
+            className="pointer-events-auto w-full max-w-md"
+          />
+        </div>
+      ) : null}
       {/* (+) FAB — bottom-left, moves with sidebar */}
       {showCanvas ? <CreateFab actions={fabActions} /> : null}
       <NewProjectDialog

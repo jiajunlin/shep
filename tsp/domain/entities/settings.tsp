@@ -38,6 +38,7 @@ import "../../common/enums/editor.tsp";
 import "../../common/enums/language.tsp";
 import "../../common/enums/notification.tsp";
 import "../../common/enums/terminal.tsp";
+import "../../agents/supervisor-policy.tsp";
 
 /**
  * Model Configuration
@@ -531,6 +532,21 @@ model NotificationEventConfig {
 
   @doc("Notify when a new operation log entry is appended (spec 090)")
   operationLogAppended?: boolean = true;
+
+  @doc("Notify when a non-blocking AgentQuestion is raised by a running agent (spec 093). Default OFF — info-tier events go to the activity feed only unless the user opts in.")
+  agentQuestionPending?: boolean = false;
+
+  @doc("Notify when a blocking AgentQuestion pauses an agent and requires an answer (spec 093). Default ON — blocking-tier events MUST reach the user.")
+  agentQuestionBlocking?: boolean = true;
+
+  @doc("Notify when an inter-agent message is rejected or undeliverable (spec 093). Default OFF — info-tier event.")
+  agentMessageBlocked?: boolean = false;
+
+  @doc("Notify when the supervisor escalates a decision back to the user (spec 093). Default ON — actionable.")
+  supervisorEscalated?: boolean = true;
+
+  @doc("Notify when the supervisor evaluator fails and the system falls back to standard human approval (spec 093, FR-22). Default ON — actionable.")
+  supervisorFailed?: boolean = true;
 }
 
 /**
@@ -591,6 +607,9 @@ model FeatureFlags {
 
   @doc("Enable AI-powered code review for pull requests")
   codeReview: boolean = false;
+
+  @doc("Enable agent collaboration, supervisor agent, and unified question pipeline (spec 093)")
+  collaboration: boolean = false;
 }
 
 /**
@@ -643,6 +662,32 @@ model InteractiveAgentConfig {
    */
   @doc("Maximum number of concurrent active interactive sessions (default: 3)")
   maxConcurrentSessions: int32 = 3;
+}
+
+/**
+ * Supervisor Configuration (Settings-level defaults, spec 093)
+ *
+ * Global default supervisor behavior. Per-app and per-feature overrides
+ * live on the SupervisorPolicy entity. This sub-block on Settings is the
+ * fallback when no policy row exists for a scope and the user wants
+ * default-on supervision for newly created apps.
+ *
+ * All fields are optional and default to disabled / advisory so existing
+ * installations behave identically until the user opts in.
+ */
+@doc("Supervisor agent default configuration (spec 093)")
+model SupervisorConfig {
+  @doc("Whether a supervisor is enabled by default for newly created apps")
+  enabled: boolean = false;
+
+  @doc("Default autonomy level (advisory by default)")
+  autonomyLevel: SupervisorAutonomy = SupervisorAutonomy.advisory;
+
+  @doc("Default LLM model identifier (resolved through IAgentExecutorProvider)")
+  modelId?: string;
+
+  @doc("Default evaluator prompt version marker")
+  promptVersion?: string;
 }
 
 /**
@@ -831,6 +876,14 @@ model Settings extends BaseEntity {
    */
   @doc("FAB layout configuration (optional, defaults applied at runtime)")
   fabLayout?: FabLayoutConfig;
+
+  /**
+   * Supervisor agent default configuration (spec 093).
+   * Per-app and per-feature overrides live on the SupervisorPolicy entity.
+   * Optional for backward compatibility — defaults applied at runtime.
+   */
+  @doc("Supervisor agent default configuration (optional, defaults applied at runtime)")
+  supervisor?: SupervisorConfig;
 
   /**
    * The page shown when the user navigates to the root URL.

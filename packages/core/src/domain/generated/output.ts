@@ -615,6 +615,26 @@ export type NotificationEventConfig = {
    * Notify when a new operation log entry is appended (spec 090)
    */
   operationLogAppended?: boolean;
+  /**
+   * Notify when a non-blocking AgentQuestion is raised by a running agent (spec 093). Default OFF — info-tier events go to the activity feed only unless the user opts in.
+   */
+  agentQuestionPending?: boolean;
+  /**
+   * Notify when a blocking AgentQuestion pauses an agent and requires an answer (spec 093). Default ON — blocking-tier events MUST reach the user.
+   */
+  agentQuestionBlocking?: boolean;
+  /**
+   * Notify when an inter-agent message is rejected or undeliverable (spec 093). Default OFF — info-tier event.
+   */
+  agentMessageBlocked?: boolean;
+  /**
+   * Notify when the supervisor escalates a decision back to the user (spec 093). Default ON — actionable.
+   */
+  supervisorEscalated?: boolean;
+  /**
+   * Notify when the supervisor evaluator fails and the system falls back to standard human approval (spec 093, FR-22). Default ON — actionable.
+   */
+  supervisorFailed?: boolean;
 };
 
 /**
@@ -663,6 +683,10 @@ export type FeatureFlags = {
    * Enable AI-powered code review for pull requests
    */
   codeReview: boolean;
+  /**
+   * Enable agent collaboration, supervisor agent, and unified question pipeline (spec 093)
+   */
+  collaboration: boolean;
 };
 
 /**
@@ -681,6 +705,33 @@ export type InteractiveAgentConfig = {
    * Maximum number of concurrent active interactive sessions (default: 3)
    */
   maxConcurrentSessions: number;
+};
+export enum SupervisorAutonomy {
+  advisory = 'advisory',
+  cosign = 'cosign',
+  autonomous = 'autonomous',
+}
+
+/**
+ * Supervisor agent default configuration (spec 093)
+ */
+export type SupervisorConfig = {
+  /**
+   * Whether a supervisor is enabled by default for newly created apps
+   */
+  enabled: boolean;
+  /**
+   * Default autonomy level (advisory by default)
+   */
+  autonomyLevel: SupervisorAutonomy;
+  /**
+   * Default LLM model identifier (resolved through IAgentExecutorProvider)
+   */
+  modelId?: string;
+  /**
+   * Default evaluator prompt version marker
+   */
+  promptVersion?: string;
 };
 
 /**
@@ -747,9 +798,64 @@ export type Settings = BaseEntity & {
    */
   fabLayout?: FabLayoutConfig;
   /**
+   * Supervisor agent default configuration (optional, defaults applied at runtime)
+   */
+  supervisor?: SupervisorConfig;
+  /**
    * Default landing page when opening the web UI (default: control-center)
    */
   defaultHomePage?: DefaultHomePage;
+};
+export enum SupervisorScopeType {
+  global = 'global',
+  repo = 'repo',
+  app = 'app',
+}
+
+/**
+ * Supervisor policy with cascading scope: global → repo → app → feature
+ */
+export type SupervisorPolicy = BaseEntity & {
+  /**
+   * Level at which this policy applies (global, repo, or app)
+   */
+  scopeType: SupervisorScopeType;
+  /**
+   * Scope identifier — app or repo UUID (null for global policies)
+   */
+  scopeId?: string;
+  /**
+   * Feature scope identifier (optional per-feature override)
+   */
+  featureId?: string;
+  /**
+   * Master enable toggle
+   */
+  enabled: boolean;
+  /**
+   * Default autonomy level (advisory by default)
+   */
+  autonomyLevel: SupervisorAutonomy;
+  /**
+   * JSON map: per-gate autonomy override (e.g. { prd: 'advisory', merge: 'autonomous' })
+   */
+  gateAuthorityJson?: string;
+  /**
+   * LLM model identifier resolved through IAgentExecutorProvider
+   */
+  modelId?: string;
+  /**
+   * Evaluator prompt version marker for audit reproducibility
+   */
+  promptVersion?: string;
+  /**
+   * JSON array of structured policy rules
+   */
+  policyRulesJson?: string;
+  /**
+   * JSON object overriding the user's notification preferences for supervisor events
+   */
+  notificationOverridesJson?: string;
 };
 export enum TaskState {
   Todo = 'Todo',
@@ -1786,6 +1892,11 @@ export enum NotificationEventType {
   CloudDeploymentUpdated = 'cloud_deployment_updated',
   ApplicationUpdated = 'application_updated',
   OperationLogAppended = 'operation_log_appended',
+  AgentQuestionPending = 'agent_question_pending',
+  AgentQuestionBlocking = 'agent_question_blocking',
+  AgentMessageBlocked = 'agent_message_blocked',
+  SupervisorEscalated = 'supervisor_escalated',
+  SupervisorFailed = 'supervisor_failed',
 }
 export enum NotificationSeverity {
   Info = 'info',
@@ -3620,6 +3731,275 @@ export type WorkflowStep = BaseEntity & {
    * JSON blob with summary, details, error — populated when done/failed
    */
   metadata?: string;
+};
+export enum AgentMessageKind {
+  status = 'status',
+  request = 'request',
+  reply = 'reply',
+  blocked = 'blocked',
+  info = 'info',
+}
+
+/**
+ * Inter-agent / agent↔user / agent↔supervisor message persisted on the bus
+ */
+export type AgentMessage = BaseEntity & {
+  /**
+   * App scope identifier (set when message originates in an app context)
+   */
+  appId?: string;
+  /**
+   * Repository scope identifier (set for standalone-repo agent work)
+   */
+  repositoryId?: string;
+  /**
+   * Optional feature scope identifier
+   */
+  featureId?: string;
+  /**
+   * Sending agent run id (omitted when sender is user or supervisor)
+   */
+  fromAgentRunId?: string;
+  /**
+   * Sender actor namespace: e.g. 'agent:<runId>', 'user:<id>', 'supervisor:<id>'
+   */
+  fromActor: string;
+  /**
+   * Target identifier — agent run id, 'broadcast', 'supervisor', or 'user'
+   */
+  toTarget: string;
+  /**
+   * Target kind: 'agent' | 'broadcast' | 'supervisor' | 'user'
+   */
+  toKind: string;
+  /**
+   * Discriminator for the meaning of the payload
+   */
+  messageKind: AgentMessageKind;
+  /**
+   * JSON-encoded payload (untrusted content, validated at boundaries)
+   */
+  payload: string;
+  /**
+   * Pairs a request with its reply (optional)
+   */
+  correlationId?: string;
+  /**
+   * Timestamp when the bus marked this message delivered to subscribers
+   */
+  deliveredAt?: any;
+};
+export enum AgentQuestionKind {
+  info = 'info',
+  question = 'question',
+  blocking = 'blocking',
+}
+export enum AgentQuestionAnswerer {
+  user = 'user',
+  supervisor = 'supervisor',
+  either = 'either',
+}
+export enum AgentQuestionStatus {
+  pending = 'pending',
+  answered = 'answered',
+  expired = 'expired',
+  cancelled = 'cancelled',
+}
+
+/**
+ * A question raised by an agent toward the user, supervisor, or either
+ */
+export type AgentQuestion = BaseEntity & {
+  /**
+   * App scope identifier (set when question originates in app context)
+   */
+  appId?: string;
+  /**
+   * Repository scope identifier (set for standalone-repo agent work)
+   */
+  repositoryId?: string;
+  /**
+   * Optional feature scope identifier
+   */
+  featureId?: string;
+  /**
+   * Agent run that raised this question
+   */
+  agentRunId: string;
+  /**
+   * Three-tier urgency
+   */
+  kind: AgentQuestionKind;
+  /**
+   * Free-form question text shown to the answerer
+   */
+  prompt: string;
+  /**
+   * JSON-encoded array of multiple-choice options (optional)
+   */
+  optionsJson?: string;
+  /**
+   * Default answer used when expiresAt fires (non-blocking kinds only)
+   */
+  defaultAnswer?: string;
+  /**
+   * Who is permitted to answer this question
+   */
+  answerer: AgentQuestionAnswerer;
+  /**
+   * Current lifecycle state
+   */
+  status: AgentQuestionStatus;
+  /**
+   * Final answer text, set when status transitions to answered or expired
+   */
+  answer?: string;
+  /**
+   * Actor namespace of the answerer, e.g. 'user:<id>' or 'supervisor:<id>'
+   */
+  answeredBy?: string;
+  /**
+   * Timestamp when the answer was recorded
+   */
+  answeredAt?: any;
+  /**
+   * Auto-resolution deadline (optional, used with defaultAnswer)
+   */
+  expiresAt?: any;
+};
+export enum SupervisorVerdict {
+  approve = 'approve',
+  reject = 'reject',
+  escalate = 'escalate',
+  advise = 'advise',
+}
+
+/**
+ * Immutable audit record of a supervisor decision
+ */
+export type SupervisorDecision = BaseEntity & {
+  /**
+   * Scope level of the policy that triggered this decision (global, repo, app)
+   */
+  scopeType: string;
+  /**
+   * App or repo UUID from the triggering policy (null for global)
+   */
+  scopeId?: string;
+  /**
+   * Optional feature scope identifier
+   */
+  featureId?: string;
+  /**
+   * Agent run id of the supervisor that produced this decision
+   */
+  supervisorRunId: string;
+  /**
+   * Kind of source event: 'gate' | 'question' | 'message' | 'lifecycle'
+   */
+  sourceEventKind: string;
+  /**
+   * Id of the source event row this decision was about
+   */
+  sourceEventId: string;
+  /**
+   * Decision outcome
+   */
+  verdict: SupervisorVerdict;
+  /**
+   * Free-form rationale string written by the evaluator
+   */
+  rationale: string;
+  /**
+   * LLM model used at decision time (snapshot for reproducibility)
+   */
+  modelId: string;
+  /**
+   * Evaluator prompt version snapshot
+   */
+  promptVersion: string;
+  /**
+   * Optional reference to the policy rule that fired
+   */
+  ruleRef?: string;
+  /**
+   * Optional 0..1 confidence reported by the evaluator
+   */
+  confidence?: float64;
+};
+
+/**
+ * User-supplied override for a built-in agent prompt
+ */
+export type AgentPromptOverride = BaseEntity & {
+  /**
+   * Agent type the prompt belongs to (e.g. 'feature-agent')
+   */
+  agentType: string;
+  /**
+   * Stable prompt identifier within the agent (e.g. 'implement')
+   */
+  promptId: string;
+  /**
+   * Override prompt body
+   */
+  body: string;
+  /**
+   * Monotonic version counter, bumped on every upsert
+   */
+  version: number;
+  /**
+   * Author of the override
+   */
+  createdBy: string;
+};
+
+/**
+ * User-supplied override for a built-in agent LangGraph descriptor
+ */
+export type AgentGraphOverride = BaseEntity & {
+  /**
+   * Agent type the descriptor belongs to (e.g. 'feature-agent')
+   */
+  agentType: string;
+  /**
+   * JSON-encoded array of node descriptors ({id,label,description?})
+   */
+  nodesJson: string;
+  /**
+   * JSON-encoded array of edge descriptors ({from,to,label?})
+   */
+  edgesJson: string;
+  /**
+   * Monotonic version counter, bumped on every upsert
+   */
+  version: number;
+  /**
+   * Author of the override
+   */
+  createdBy: string;
+};
+
+/**
+ * User-created agent type, editable in the agent editor
+ */
+export type CustomAgent = BaseEntity & {
+  /**
+   * Stable agent type identifier (kebab-case, unique)
+   */
+  agentType: string;
+  /**
+   * Human-readable display name
+   */
+  name: string;
+  /**
+   * Short description of what this agent does
+   */
+  description: string;
+  /**
+   * Author of the agent
+   */
+  createdBy: string;
 };
 
 /**

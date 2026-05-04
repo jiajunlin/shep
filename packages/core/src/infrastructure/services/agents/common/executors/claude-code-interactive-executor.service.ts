@@ -152,27 +152,39 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
     const { CLAUDECODE: _, ...cleanEnv } = process.env;
 
     // Build the canUseTool callback. This callback acts as both:
-    //   1. The interception point for AskUserQuestion (delegates to onUserQuestion).
+    //   1. The interception point for AskUserQuestion — routes through the
+    //      unified agent-question pipeline (spec 093) when enabled, or
+    //      delegates to onUserQuestion (legacy direct-prompt path).
     //   2. The fallback approver for any tool NOT in `allowedTools` — most
     //      importantly, MCP tools (named `mcp__<server>__<tool>`).
     //
-    // Issue #582: MCP tools were blocked because canUseTool was only set when
-    // onUserQuestion was provided, and AUTO_ALLOWED_TOOLS doesn't enumerate
-    // every MCP tool the user has configured. Always installing canUseTool
-    // ensures unknown / dynamic MCP tools fall through to "allow" instead
-    // of being rejected by the SDK's default permission gate.
+    // Issue #582: Always installing canUseTool ensures unknown / dynamic MCP
+    // tools fall through to "allow" instead of being rejected by the SDK's
+    // default permission gate.
     const canUseTool = async (
       toolName: string,
       input: Record<string, unknown>,
       opts: { toolUseID: string }
     ) => {
-      if (toolName === 'AskUserQuestion' && options.onUserQuestion) {
+      if (toolName === 'AskUserQuestion') {
         const questions = (input.questions as UserQuestion[]) ?? [];
-        const answers = await options.onUserQuestion({
-          toolCallId: opts.toolUseID,
-          questions,
-        });
-        // Inject answers into the tool input so the SDK treats it as already answered
+        let answers: Record<string, string> | null = null;
+        if (options.agentQuestionBridge) {
+          answers = await options.agentQuestionBridge.ask({
+            toolCallId: opts.toolUseID,
+            questions,
+          });
+        }
+        if (answers === null) {
+          if (options.onUserQuestion) {
+            answers = await options.onUserQuestion({
+              toolCallId: opts.toolUseID,
+              questions,
+            });
+          } else {
+            return { behavior: 'allow' as const };
+          }
+        }
         return {
           behavior: 'allow' as const,
           updatedInput: { ...input, answers },

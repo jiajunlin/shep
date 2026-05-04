@@ -16,6 +16,10 @@ import {
   Settings,
   TableProperties,
   FolderKanban,
+  MessageCircleQuestion,
+  ShieldCheck,
+  Bot,
+  GraduationCap,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -48,6 +52,8 @@ import type { FeatureStatus } from '@/components/common/feature-status-config';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDeferredMount } from '@/hooks/use-deferred-mount';
 import { useVersion } from '@/hooks/use-version';
+import { useOptionalAgentEventsContext } from '@/hooks/agent-events-provider';
+import { AgentQuestionKind, AgentQuestionStatus } from '@shepai/core/domain/generated/output';
 import type { FeatureFlagsState } from '@/lib/feature-flags';
 
 export interface FeatureItem {
@@ -90,6 +96,17 @@ export function AppSidebar({
   const toggleOnSound = useSoundAction('toggle-on');
   const toggleOffSound = useSoundAction('toggle-off');
   const clickSound = useSoundAction('navigate');
+
+  const eventsCtx = useOptionalAgentEventsContext();
+  const pendingQuestionCount = useMemo(() => {
+    if (!featureFlags.collaboration || !eventsCtx) return 0;
+    return eventsCtx.agentQuestions.filter(
+      (q) =>
+        q.status === AgentQuestionStatus.pending &&
+        (q.questionKind === AgentQuestionKind.blocking ||
+          q.questionKind === AgentQuestionKind.question)
+    ).length;
+  }, [featureFlags.collaboration, eventsCtx]);
 
   // Group features by repository, then by status within each repo
   const repoGroups = useMemo(() => {
@@ -196,6 +213,35 @@ export function AppSidebar({
             href="/skills"
             active={pathname === '/skills'}
           />
+          {featureFlags.collaboration ? (
+            <>
+              <SidebarNavItem
+                icon={MessageCircleQuestion}
+                label={t('navigation.agentQuestions')}
+                href="/agent-questions"
+                active={pathname === '/agent-questions'}
+                badge={pendingQuestionCount}
+              />
+              <SidebarNavItem
+                icon={ShieldCheck}
+                label="Supervisor"
+                href="/supervisor"
+                active={pathname?.startsWith('/supervisor') ?? false}
+              />
+              <SidebarNavItem
+                icon={Bot}
+                label="Agents"
+                href="/agents"
+                active={pathname?.startsWith('/agents') ?? false}
+              />
+              <SidebarNavItem
+                icon={GraduationCap}
+                label="Get started"
+                href="/onboarding"
+                active={pathname?.startsWith('/onboarding') ?? false}
+              />
+            </>
+          ) : null}
           <SidebarNavItem
             icon={Settings}
             label={t('navigation.settings')}

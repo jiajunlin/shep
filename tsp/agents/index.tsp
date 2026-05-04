@@ -92,3 +92,12 @@ import "./interactive-message.tsp";
 
 // Persistent workflow step tracking
 import "./workflow-step.tsp";
+
+// Agent collaboration & supervision (spec 093)
+import "./agent-message.tsp";
+import "./agent-question.tsp";
+import "./supervisor-policy.tsp";
+import "./supervisor-decision.tsp";
+import "./agent-prompt-override.tsp";
+import "./agent-graph-override.tsp";
+import "./custom-agent.tsp";

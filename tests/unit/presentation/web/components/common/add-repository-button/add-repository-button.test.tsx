@@ -54,6 +54,7 @@ vi.mock('@/hooks/feature-flags-context', () => ({
     reactFileManager: false,
     projects: false,
     codeReview: false,
+    collaboration: false,
   })),
 }));
 
@@ -73,6 +74,7 @@ describe('AddRepositoryButton', () => {
       reactFileManager: false,
       projects: false,
       codeReview: false,
+      collaboration: false,
     });
   });
 
@@ -167,6 +169,7 @@ describe('AddRepositoryButton', () => {
         reactFileManager: false,
         projects: false,
         codeReview: false,
+        collaboration: false,
       });
     });
 
@@ -294,6 +297,7 @@ describe('AddRepositoryButton', () => {
         reactFileManager: true,
         projects: false,
         codeReview: false,
+        collaboration: false,
       });
     });
 
@@ -363,6 +367,7 @@ describe('AddRepositoryButton', () => {
         reactFileManager: true,
         projects: false,
         codeReview: false,
+        collaboration: false,
       });
       const user = userEvent.setup();
       render(<AddRepositoryButton />);

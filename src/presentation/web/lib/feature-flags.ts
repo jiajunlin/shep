@@ -18,6 +18,7 @@ export interface FeatureFlagsState {
   reactFileManager: boolean;
   projects: boolean;
   codeReview: boolean;
+  collaboration: boolean;
 }
 
 export function getFeatureFlags(): FeatureFlagsState {
@@ -31,6 +32,7 @@ export function getFeatureFlags(): FeatureFlagsState {
           reactFileManager: flags.reactFileManager,
           projects: flags.projects,
           codeReview: flags.codeReview,
+          collaboration: flags.collaboration,
         };
       }
     }
@@ -47,7 +49,32 @@ export function getFeatureFlags(): FeatureFlagsState {
     reactFileManager: isEnabled(process.env.NEXT_PUBLIC_FLAG_REACT_FILE_MANAGER),
     projects: false,
     codeReview: false,
+    collaboration: isEnabled(process.env.NEXT_PUBLIC_FLAG_COLLABORATION),
   };
+}
+
+/**
+ * Error thrown by {@link requireFeatureFlag} when a flag is disabled.
+ * Server actions catch this and translate it into `{ ok: false, error }`
+ * so callers see a clear "feature off" message instead of a 500.
+ */
+export class FeatureFlagDisabledError extends Error {
+  constructor(public readonly flag: keyof FeatureFlagsState) {
+    super(`Feature flag "${flag}" is disabled`);
+    this.name = 'FeatureFlagDisabledError';
+  }
+}
+
+/**
+ * Throws {@link FeatureFlagDisabledError} when the named flag is off.
+ * Use at the top of every server action / API route handler that should
+ * be reachable only when its feature is enabled — even hidden surfaces
+ * still expose POST endpoints anyone with the URL can hit.
+ */
+export function requireFeatureFlag(flag: keyof FeatureFlagsState): void {
+  if (!getFeatureFlags()[flag]) {
+    throw new FeatureFlagDisabledError(flag);
+  }
 }
 
 /**
@@ -69,5 +96,8 @@ export const featureFlags = {
   },
   get codeReview() {
     return getFeatureFlags().codeReview;
+  },
+  get collaboration() {
+    return getFeatureFlags().collaboration;
   },
 } as const;

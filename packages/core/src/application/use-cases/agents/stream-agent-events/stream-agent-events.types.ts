@@ -8,9 +8,14 @@
  */
 
 import type {
+  AgentMessageKind,
+  AgentQuestionAnswerer,
+  AgentQuestionKind,
+  AgentQuestionStatus,
   ApplicationStatus,
   CloudDeploymentProvider,
   NotificationEvent,
+  SupervisorVerdict,
 } from '../../../../domain/generated/output.js';
 import { AgentRunStatus, InteractiveSessionStatus } from '../../../../domain/generated/output.js';
 import {
@@ -49,7 +54,90 @@ export interface NotificationStreamEvent {
   };
 }
 
-export type StreamedAgentEvent = NotificationStreamEvent | InteractiveSessionStreamEvent;
+/**
+ * Envelope for an inter-agent message published on {@link IAgentMessageBus}
+ * (spec 093). Forwarded to every connected client via the existing SSE
+ * pipeline so the web UI can render the agent activity feed in real time.
+ */
+export interface AgentMessageStreamEvent {
+  kind: 'agent_message';
+  messageId: string;
+  appId?: string;
+  repositoryId?: string;
+  featureId?: string;
+  fromActor: string;
+  fromAgentRunId?: string;
+  toTarget: string;
+  toKind: string;
+  messageKind: AgentMessageKind;
+  /** Raw JSON-encoded payload — clients parse on the receiving end. */
+  payload: string;
+  correlationId?: string;
+  createdAt: string;
+}
+
+/**
+ * Envelope for an {@link AgentQuestion} lifecycle event (spec 093,
+ * task 18). Two `transition` values are emitted:
+ *  - `new`     — the question just appeared in the polled set.
+ *  - `status`  — the question's status changed from its previous value
+ *                (e.g., pending → answered).
+ *
+ * Forwarded to every connected client via the existing SSE pipeline so
+ * the unified question inbox can render the row in real time.
+ */
+export interface AgentQuestionStreamEvent {
+  kind: 'agent_question';
+  questionId: string;
+  appId?: string;
+  repositoryId?: string;
+  featureId?: string;
+  agentRunId: string;
+  questionKind: AgentQuestionKind;
+  answerer: AgentQuestionAnswerer;
+  status: AgentQuestionStatus;
+  prompt: string;
+  optionsJson?: string;
+  answer?: string;
+  answeredBy?: string;
+  answeredAt?: string;
+  transition: 'new' | 'status';
+  createdAt: string;
+}
+
+/**
+ * Envelope for a {@link SupervisorDecision} (spec 093, task 30).
+ *
+ * Forwarded to every connected client via the existing SSE pipeline so
+ * the supervisor "Why?" drawer and audit views can render decisions in
+ * real time. Decisions are immutable, so we only emit a `new` event —
+ * unlike {@link AgentQuestionStreamEvent} there is no status transition
+ * to track.
+ */
+export interface SupervisorDecisionStreamEvent {
+  kind: 'supervisor_decision';
+  decisionId: string;
+  scopeType: string;
+  scopeId?: string;
+  featureId?: string;
+  supervisorRunId: string;
+  sourceEventKind: string;
+  sourceEventId: string;
+  verdict: SupervisorVerdict;
+  rationale: string;
+  modelId: string;
+  promptVersion: string;
+  ruleRef?: string;
+  confidence?: number;
+  createdAt: string;
+}
+
+export type StreamedAgentEvent =
+  | NotificationStreamEvent
+  | InteractiveSessionStreamEvent
+  | AgentMessageStreamEvent
+  | AgentQuestionStreamEvent
+  | SupervisorDecisionStreamEvent;
 
 /** Per-connection cached state for a single feature. */
 export interface CachedFeatureState {
