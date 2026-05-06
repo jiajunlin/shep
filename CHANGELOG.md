@@ -4,6 +4,45 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.203.0](/compare/v1.202.3...v1.203.0) · _2026-05-06_
+
+> _No user-facing changes_ — just housekeeping under the hood to keep the codebase clean.
+
+
+
+### ✨ Features
+
+* **web:** hide tech and product spec tabs for fast-mode features ([#609](https://github.com/shep-ai/shep/issues/609)) ([44042d1](https://github.com/shep-ai/shep/commit/44042d104495b70c475229d60e4b6467d522fb92))
+
+  ![App: feature drawer in actual running web app for the 'Hide Empty Spec Tabs in Fast Mode' fast-mode feature — shows the Fast mode badge and only Overview/Activity/Log/Chat tabs (Tech Decisions and Product tabs correctly hidden)](https://raw.githubusercontent.com/shep-ai/shep/feat/hide-fast-mode-spec-tabs/specs/097-hide-fast-mode-spec-tabs/evidence/app-fast-mode-feature-drawer.png)
+  ![App: feature drawer in actual running web app for a non-fast-mode (spec) feature — shows full tab set including Tech Decisions and Product, confirming the change is scoped only to fast-mode features](https://raw.githubusercontent.com/shep-ai/shep/feat/hide-fast-mode-spec-tabs/specs/097-hide-fast-mode-spec-tabs/evidence/app-spec-mode-feature-drawer.png)
+  ![App: control-center page from running dev server showing real features including the fast-mode 'Hide Empty Spec Tabs in Fast Mode' card](https://raw.githubusercontent.com/shep-ai/shep/feat/hide-fast-mode-spec-tabs/specs/097-hide-fast-mode-spec-tabs/evidence/app-control-center.png)
+  ![Storybook (supplementary): FeatureDrawerTabs Default story (non-fast-mode) showing all six tabs visible: Overview, Activity, Plan, Tech Decisions, Product, Chat](https://raw.githubusercontent.com/shep-ai/shep/feat/hide-fast-mode-spec-tabs/specs/097-hide-fast-mode-spec-tabs/evidence/storybook-default-with-tech-product-tabs.png)
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.203.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.202.3](/compare/v1.202.2...v1.202.3) · _2026-05-06_
 
 > _Nothing user-facing_ — just the housekeeping that keeps the gears turning smoothly under the hood.
