@@ -56,6 +56,7 @@ import { createNotificationsCommand } from './commands/notifications/index.js';
 import { createReviewCommand } from './commands/review.command.js';
 import { createDoctorCommand } from './commands/doctor.command.js';
 import { createSupervisorCommand } from './commands/supervisor/index.js';
+import { createBedrockCommand } from './commands/bedrock/bedrock.command.js';
 import { createContributorsCommand } from './commands/contributors/index.js';
 import { messages } from './ui/index.js';
 
@@ -150,6 +151,7 @@ async function bootstrap() {
     program.addCommand(createReviewCommand());
     program.addCommand(createDoctorCommand());
     program.addCommand(createSupervisorCommand());
+    program.addCommand(createBedrockCommand());
     program.addCommand(createContributorsCommand());
     program.addCommand(createUpgradeCommand());
 

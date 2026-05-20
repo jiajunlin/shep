@@ -1,5 +1,43 @@
 # Lessons Learned
 
+## Tool install commands must bootstrap their own package manager
+
+The `project-bedrock.json` tool definition shipped with `pipx install project-bedrock` on every platform, assuming pipx was already present. It often isn't (fresh macOS, fresh Linux dev box), and the install failed silently from the user's perspective — they saw `command not found: pipx` and reported "the tools install is broken." Two follow-on traps appeared while fixing it:
+
+1. **`python3 -m pipx` does NOT work after `brew install pipx`.** Homebrew installs pipx as a standalone binary, not as a module of the user's `python3`. Verified locally: `brew install pipx` succeeded, then `python3 -m pipx ensurepath` failed with `No module named pipx`. Always invoke the `pipx` binary directly when it's available; only fall back to `python3 -m pipx` when pipx was installed via `pip --user`.
+
+2. **Modern Linux + macOS (Sequoia + Homebrew Python) ship PEP-668 protected Python.** A plain `python3 -m pip install --user pipx` errors with `externally-managed-environment`. Always have a fallback to `--break-system-packages` for the bootstrap path, gated behind a try-without-it-first.
+
+Rules:
+
+1. Every `tools/*.json` `commands` field must bootstrap its own package manager when feasible. `pipx install X` is fine for end users with pipx; it is **not** fine inside an automated installer.
+2. After bootstrapping a tool into `~/.local/bin`, prepend that to `PATH` in the same command so the next step finds the new binary. The current shell doesn't pick up `pipx ensurepath` until next login.
+3. Test new install commands on a machine **without** the package manager preinstalled. If you only test on your dev box where the tool already exists, you'll ship the same "works on my machine" failure mode.
+
+## When you add a settings column, the repository SQL must read AND write it
+
+Migration 104 added `feature_flag_bedrock_integration` (DEFAULT 0). The mapper (`settings.mapper.ts`) handled both directions correctly. But `sqlite-settings.repository.ts` INSERT/UPDATE statements were never updated to include the new column. Result: writes silently dropped the field, the DEFAULT-0 backfill always supplied the read value, and `bedrockIntegration: false` was *coincidentally* always correct — so tests passed. The bug only surfaced when the migration default was flipped to 1 to enable-by-default: now the column read back `true` even when the caller had explicitly passed `false`.
+
+Rules:
+
+1. Adding a settings field is a four-touch change, not three: tsp/, factory, mapper, **and the INSERT + UPDATE column lists in `sqlite-settings.repository.ts`**. If any of the four is missing, persistence silently lies.
+2. Never rely on a column DEFAULT to make a feature behave correctly. Defaults are migration-fill values for existing rows, not the production write path. If the write path omits the column, the bug is masked exactly until someone changes the default — which they will, eventually.
+3. Roundtrip tests must use at least one non-default value per field (`true` AND `false`, both halves of every enum). A test that only ever asserts the DEFAULT for a field doesn't exercise the write path at all.
+
+## Required TypeSpec fields propagate to every entity fixture
+
+Adding `bedrockEnabled: boolean` to `Repository` and `Feature` in tsp/ broke ~30 unit/integration tests that construct fixtures via `Partial<Feature>` / `Partial<Repository>`. The TS error was `Property 'bedrockEnabled' is missing in type '{ ... }' but required in type 'Feature'` — even though the helper accepted Partial overrides, the literal it spread into still had to satisfy the full required type.
+
+Rules:
+
+1. New tsp fields default to **required** in the generated TS. If you add a required field to a widely-used entity (Feature, Repository, Application), expect O(20+) test fixture updates.
+2. For backwards-compat-friendly fields whose default value is the same on every existing row (e.g. `false` for a feature flag), declare them **optional** in tsp (`field?: boolean`). The mapper compares `=== 1` which already collapses `undefined` and `null` to `false`, so persistence stays deterministic.
+3. Reserve required tsp fields for invariants the domain genuinely requires (id, slug, name, etc.). Per-feature toggles are not invariants — make them optional.
+
+## Storybook needs mocks for every new `'use server'` action
+
+When a client component imports a server action, Storybook (which bundles only the client side) needs a parallel mock at `.storybook/mocks/app/actions/<filename>.ts` exporting the same symbols. Forgetting it gives a `Could not load ./.storybook/mocks/app/actions/<name>` ENOENT during `pnpm build:storybook`. Always pair every new `app/actions/<x>.action.ts` with its mock.
+
 ## Windows has no graceful kill — don't simulate one
 
 On Windows the `tree-kill` package always shells out to `taskkill /T /F`, regardless of which signal name you pass. There is no SIGTERM equivalent in the Windows kernel. So a "send SIGTERM, poll for graceful exit, then escalate to SIGKILL" pattern is theatrical on Windows: the very first call already force-killed the tree, and the polling loop is 5s of wasted budget waiting for a "graceful" exit that already happened forcefully.

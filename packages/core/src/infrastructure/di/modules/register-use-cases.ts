@@ -112,6 +112,20 @@ import { EvaluateSupervisorDecisionUseCase } from '../../../application/use-case
 import { AgentQuestionSupervisorRouter } from '../../../application/use-cases/agents/agent-question-supervisor-router.js';
 import { EscalateToUserUseCase } from '../../../application/use-cases/agents/escalate-to-user.use-case.js';
 
+// Bedrock integration (feature 098) use cases
+import { EnableBedrockForApplicationUseCase } from '../../../application/use-cases/applications/enable-bedrock-for-application.use-case.js';
+import { RunBedrockLifecycleUseCase } from '../../../application/use-cases/applications/run-bedrock-lifecycle.use-case.js';
+import { CheckBedrockHealthUseCase } from '../../../application/use-cases/applications/check-bedrock-health.use-case.js';
+import { EnableBedrockForTargetUseCase } from '../../../application/use-cases/bedrock/enable-bedrock-for-target.use-case.js';
+import { GetBedrockMemorySnapshotUseCase } from '../../../application/use-cases/bedrock/get-bedrock-memory-snapshot.use-case.js';
+import {
+  EnableBedrockForApplicationUseCaseToken,
+  RunBedrockLifecycleUseCaseToken,
+  CheckBedrockHealthUseCaseToken,
+  EnableBedrockForTargetUseCaseToken,
+  GetBedrockMemorySnapshotUseCaseToken,
+} from '../tokens.js';
+
 /**
  * Register the main body of application use cases (settings, agents, features,
  * tools, repositories, applications, projects, archival, upgrade, sessions) and
@@ -488,6 +502,29 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('DeleteCustomAgentUseCase', {
     useFactory: (c) => c.resolve(DeleteCustomAgentUseCase),
+  });
+
+  // ─── Bedrock integration (feature 098) use cases ────────────────────────
+  container.registerSingleton(EnableBedrockForApplicationUseCase);
+  container.registerSingleton(RunBedrockLifecycleUseCase);
+  container.registerSingleton(CheckBedrockHealthUseCase);
+  container.registerSingleton(EnableBedrockForTargetUseCase);
+  container.registerSingleton(GetBedrockMemorySnapshotUseCase);
+
+  container.register(EnableBedrockForApplicationUseCaseToken, {
+    useFactory: (c) => c.resolve(EnableBedrockForApplicationUseCase),
+  });
+  container.register(RunBedrockLifecycleUseCaseToken, {
+    useFactory: (c) => c.resolve(RunBedrockLifecycleUseCase),
+  });
+  container.register(CheckBedrockHealthUseCaseToken, {
+    useFactory: (c) => c.resolve(CheckBedrockHealthUseCase),
+  });
+  container.register(EnableBedrockForTargetUseCaseToken, {
+    useFactory: (c) => c.resolve(EnableBedrockForTargetUseCase),
+  });
+  container.register(GetBedrockMemorySnapshotUseCaseToken, {
+    useFactory: (c) => c.resolve(GetBedrockMemorySnapshotUseCase),
   });
 
   // ─── Doctor + Contributor (feature 097) string aliases ─────────────────
