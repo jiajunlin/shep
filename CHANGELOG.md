@@ -4,6 +4,43 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.206.0](/compare/v1.205.1...v1.206.0) · _2026-05-20_
+
+> _Keeping the lights on_ — internal maintenance and chore updates with no user-facing changes.
+
+
+
+### ✨ Features
+
+* add --help example blocks to 6 shep supervisor subcommands ([#649](https://github.com/shep-ai/shep/issues/649)) ([711bc5e](https://github.com/shep-ai/shep/commit/711bc5ecd0d84cfabd7767d24ac27c097a5709b8)), closes [#648](https://github.com/shep-ai/shep/issues/648)
+
+* **web:** extend bedrock memory to repos and features with visualization ([#626](https://github.com/shep-ai/shep/issues/626)) ([48ae1b5](https://github.com/shep-ai/shep/commit/48ae1b52fd6be45bdf9c0e090d9b65a08e6c4939))
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.206.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.205.1](/compare/v1.205.0...v1.205.1) · _2026-05-20_
 
 > _Under the hood_ housekeeping keeps the gears turning — no new features, just a cleaner foundation for what's next.
