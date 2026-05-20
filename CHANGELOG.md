@@ -4,6 +4,44 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.205.1](/compare/v1.205.0...v1.205.1) · _2026-05-20_
+
+> _Under the hood_ housekeeping keeps the gears turning — no new features, just a cleaner foundation for what's next.
+
+
+
+### 🐛 Bug Fixes
+
+* **deps:** patch security vulnerabilities across direct and transitive deps ([#642](https://github.com/shep-ai/shep/issues/642)) ([b4c36b2](https://github.com/shep-ai/shep/commit/b4c36b2a717b5629c638f822b7488c166db00fb2))
+
+* **domain:** resolve codeql js/unused-local-variable findings in docs poc ([#646](https://github.com/shep-ai/shep/issues/646)) ([091e80f](https://github.com/shep-ai/shep/commit/091e80ff4b7f4dcdd928a8ea6338261256ee7bbd))
+
+  ![Feature Flow Manager rendering correctly](https://raw.githubusercontent.com/shep-ai/shep/feat/fix-ai-security-findings/specs/100-fix-ai-security-findings/evidence/app-poc-feature-flow-manager.png)
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.205.1
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.205.0](/compare/v1.204.1...v1.205.0) · _2026-05-19_
 
 > _Under the hood_ maintenance and housekeeping to keep Shep running smoothly — no new features, just a cleaner foundation.
