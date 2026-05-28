@@ -4,6 +4,41 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.206.2](/compare/v1.206.1...v1.206.2) · _2026-05-28_
+
+> _Under the hood_ maintenance keeps the machine running smooth — no features, no fixes, just the quiet work that holds everything together.
+
+
+
+### 🐛 Bug Fixes
+
+* internationalize agent editor labels ([#672](https://github.com/shep-ai/shep/issues/672)) ([68e2c78](https://github.com/shep-ai/shep/commit/68e2c78d29e4620a7a3e7db6736d98798a3a6aee)), closes [#641](https://github.com/shep-ai/shep/issues/641)
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.206.2
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.206.1](/compare/v1.206.0...v1.206.1) · _2026-05-21_
 
 > _No user-facing changes_ — just housekeeping under the hood to keep the codebase tidy.
