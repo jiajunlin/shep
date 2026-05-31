@@ -4,6 +4,45 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.208.0](/compare/v1.207.0...v1.208.0) · _2026-05-31_
+
+> _Keeping the engine humming_ — this release is all internal maintenance, with no user-facing changes.
+
+
+
+### ✨ Features
+
+* **web:** add real-time SDLC kanban board for agent tasks ([#698](https://github.com/shep-ai/shep/issues/698)) ([4ce65e0](https://github.com/shep-ai/shep/commit/4ce65e04c09a9251b9ed0aaa9ef120c27951cba3))
+
+  ![SDLC board – populated](https://raw.githubusercontent.com/shep-ai/shep/456eeee89fdd5270568ab30fff6776735b10748a/docs/screenshots/sdlc-board/sdlc-board-default.png)
+  ![SDLC board – live client](https://raw.githubusercontent.com/shep-ai/shep/456eeee89fdd5270568ab30fff6776735b10748a/docs/screenshots/sdlc-board/sdlc-board-client.png)
+  ![SDLC board – WIP](https://raw.githubusercontent.com/shep-ai/shep/456eeee89fdd5270568ab30fff6776735b10748a/docs/screenshots/sdlc-board/sdlc-board-wip.png)
+  ![SDLC task card](https://raw.githubusercontent.com/shep-ai/shep/456eeee89fdd5270568ab30fff6776735b10748a/docs/screenshots/sdlc-board/sdlc-card-deps.png)
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.208.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.207.0](/compare/v1.206.2...v1.207.0) · _2026-05-31_
 
 > _Under the hood_ maintenance keeps the engine running smooth — no new features, just the quiet work that makes everything else possible.
