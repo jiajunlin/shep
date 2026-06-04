@@ -1,0 +1,51 @@
+feature:
+  id: '101-whatsapp-task-dispatch'
+  name: 'whatsapp-task-dispatch'
+  number: 101
+  branch: 'claude/nifty-fermat-CEFLm'
+  lifecycle: 'complete'
+  createdAt: '2026-05-31T14:48:39Z'
+
+status:
+  phase: 'complete'
+  progress:
+    completed: 15
+    total: 15
+    percentage: 100
+  currentTask: null
+  lastUpdated: '2026-05-31T16:40:00Z'
+  lastUpdatedBy: 'shep-kit:implement'
+  # All 15 tasks done plus feature-bound HITL: core engine, both adapters
+  # (Baileys + Cloud API), connection service, notification fan-out, DI, CLI
+  # status, bootstrap, web Settings UI + Storybook + Cloud API webhook route,
+  # and WhatsApp approve/reject routing to the HITL use cases (locale-aware
+  # classifier + IAgentRunRepository.findLatestByFeatureId).
+  # Remaining (distinct future capability, not in scope here): a way to BIND a
+  # feature to a WhatsApp thread — dispatch only creates Application bindings
+  # today, so the feature-HITL path is implemented and tested but reachable
+  # only once a feature↔thread binding exists.
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: 'task-1'
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-05-31T14:48:39Z'
+    completedBy: 'shep-kit:new-feature'
+  - phase: 'research-complete'
+    completedAt: '2026-05-31T14:48:39Z'
+    completedBy: 'shep-kit:research'
+  - phase: 'plan-complete'
+    completedAt: '2026-05-31T14:48:39Z'
+    completedBy: 'shep-kit:plan'
+
+errors:
+  current: null
+  history: []
