@@ -395,6 +395,12 @@ describe('createDefaultSettings', () => {
               source: 'anthropics/claude-code',
               remoteSkillName: 'frontend-design',
             },
+            {
+              name: 'remotion-best-practices',
+              type: SkillSourceType.Remote,
+              source: 'remotion-dev/skills',
+              remoteSkillName: 'remotion-best-practices',
+            },
           ],
         },
       });
@@ -412,9 +418,9 @@ describe('createDefaultSettings', () => {
       expect(settings.workflow.skillInjection!.enabled).toBe(false);
     });
 
-    it('should have 8 default skills', () => {
+    it('should have 9 default skills', () => {
       const settings = createDefaultSettings();
-      expect(settings.workflow.skillInjection!.skills).toHaveLength(8);
+      expect(settings.workflow.skillInjection!.skills).toHaveLength(9);
     });
 
     it('should have all skills as remote type', () => {
@@ -422,7 +428,7 @@ describe('createDefaultSettings', () => {
       const remoteSkills = settings.workflow.skillInjection!.skills.filter(
         (s) => s.type === SkillSourceType.Remote
       );
-      expect(remoteSkills).toHaveLength(8);
+      expect(remoteSkills).toHaveLength(9);
     });
 
     it('should have each remote skill with a remoteSkillName matching its name', () => {
@@ -455,6 +461,7 @@ describe('createDefaultSettings', () => {
         'tsp-model',
         'vercel-react-best-practices',
         'frontend-design',
+        'remotion-best-practices',
       ]);
     });
   });

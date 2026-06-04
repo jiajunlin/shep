@@ -1,0 +1,6 @@
+$ pnpm typecheck
+> @shepai/cli@1.186.0 typecheck
+> tsc --noEmit
+
+Exit code: 0
+No errors.

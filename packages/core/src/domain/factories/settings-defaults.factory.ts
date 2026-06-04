@@ -200,6 +200,12 @@ export function createDefaultSettings(): Settings {
         source: 'anthropics/claude-code',
         remoteSkillName: 'frontend-design',
       },
+      {
+        name: 'remotion-best-practices',
+        type: SkillSourceType.Remote,
+        source: 'remotion-dev/skills',
+        remoteSkillName: 'remotion-best-practices',
+      },
     ],
   };
 
