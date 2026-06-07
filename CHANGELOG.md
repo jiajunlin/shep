@@ -4,6 +4,43 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.209.0](/compare/v1.208.1...v1.209.0) · _2026-06-07_
+
+> _Under the hood_ maintenance keeps Shep running smoothly — no user-facing changes in this one.
+
+
+
+### ✨ Features
+
+* **domain:** add remotion video skill to default injection ([#567](https://github.com/shep-ai/shep/issues/567)) ([d7a43f0](https://github.com/shep-ai/shep/commit/d7a43f0500734d4bf19e046c3e662c458a7e494c))
+
+* WhatsApp-native task dispatch & interactive control (spec 101) ([#702](https://github.com/shep-ai/shep/issues/702)) ([7a8b02c](https://github.com/shep-ai/shep/commit/7a8b02ccc15ed9d79bdcc58baf652d5779e5e93f))
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.209.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.208.1](/compare/v1.208.0...v1.208.1) · _2026-06-01_
 
 > _Under the hood_ housekeeping keeps the machinery humming — no new features, just a cleaner foundation for what's next.
