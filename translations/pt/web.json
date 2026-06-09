@@ -206,10 +206,8 @@
       "aspmDescription": "Enable the ASPM module — findings ingestion, posture dashboard, remediation campaigns, exceptions, and AI-change review queue",
       "bedrockIntegration": "Project Bedrock Memory",
       "bedrockIntegrationDescription": "Enable project-bedrock memory integration (markdown project memory for AI coding agents) — surfaces toggles, drawers, and tabs across applications, repositories, and features. Requires Python 3.9+ and pipx.",
-
       "whatsappDispatch": "Despacho de tarefas no WhatsApp",
       "whatsappDispatchDescription": "Despache e conduza os agentes do shep pelo WhatsApp — crie funcionalidades, receba atualizações do agente e aprove etapas respondendo em uma conversa.",
-
       "hint": "Recursos experimentais que ainda estão em desenvolvimento. Ative por sua conta e risco — podem mudar ou ser removidos em versões futuras. O modo debug adiciona logs detalhados úteis para solução de problemas."
     },
     "interactiveAgent": {
@@ -301,7 +299,8 @@
     "aspmOwners": "Owners",
     "aspmAiReview": "AI Review",
     "aspmCompliance": "Compliance",
-    "collaboration": "Collaboration"
+    "collaboration": "Collaboration",
+    "projectMemory": "Project Memory"
   },
   "sidebar": {
     "features": "Recursos",
@@ -743,5 +742,39 @@
     "promptCount_many": "{{count}} prompts",
     "overrideCount_few": "{{count}} substituições",
     "overrideCount_many": "{{count}} substituições"
+  },
+  "memory": {
+    "title": "Project Memory",
+    "subtitle": "Durable knowledge agents read at the start of every feature. Updated automatically after each merged PR.",
+    "empty": {
+      "title": "No project memory yet",
+      "description": "As features merge, agents distil conventions, library choices, and fixes here."
+    },
+    "categories": {
+      "convention": "Conventions",
+      "architectureDecision": "Architecture Decisions",
+      "library": "Preferred Libraries & Tools",
+      "namingPattern": "Naming Patterns",
+      "ciFixResolution": "Past CI/Build Fixes"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel",
+      "makeOrgWide": "Make organization-wide",
+      "makeProjectOnly": "Make project-only"
+    },
+    "deleteDialog": {
+      "title": "Delete this memory entry?",
+      "description": "Agents will no longer see this guidance when starting a feature. This cannot be undone."
+    },
+    "errors": {
+      "emptyContent": "Memory content cannot be empty.",
+      "updateFailed": "Failed to update the memory entry."
+    },
+    "scope": {
+      "organization": "Organization"
+    }
   }
 }
