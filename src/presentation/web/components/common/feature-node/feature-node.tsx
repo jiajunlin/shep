@@ -9,6 +9,7 @@ import {
   Trash2,
   Zap,
   ClipboardList,
+  FlaskConical,
   Loader2,
   Globe,
   RotateCcw,
@@ -44,9 +45,11 @@ import {
   lifecycleRunningVerbs,
   lifecyclePhaseBadge,
 } from './feature-node-state-config';
+import { BuildMode } from '@shepai/core/domain/generated/output';
 import type { FeatureNodeData } from './feature-node-state-config';
 import { getAgentTypeIcon } from './agent-type-icons';
 import { FeatureSessionsDropdown } from './feature-sessions-dropdown';
+import { SecurityBadge } from '@/components/common/security-badge';
 
 function AgentIcon({ agentType, className }: { agentType?: string; className?: string }) {
   const IconComponent = getAgentTypeIcon(agentType);
@@ -135,15 +138,14 @@ export function FeatureNode({
       className="animate-in fade-in group relative duration-300"
       style={{ direction: isRtl ? 'rtl' : 'ltr' }}
     >
-      {data.showHandles ? (
-        <Handle
-          type="target"
-          position={targetHandlePos}
-          isConnectable={false}
-          className="opacity-0!"
-          style={{ top: 70 }}
-        />
-      ) : null}
+      {/* Target handle — always rendered for connection support. */}
+      <Handle
+        type="target"
+        position={targetHandlePos}
+        isConnectable={true}
+        className="opacity-0!"
+        style={{ top: 70 }}
+      />
 
       {/* Action buttons — positioned on the target-handle side of the node (left in LTR, right in RTL). */}
       <div
@@ -331,8 +333,10 @@ export function FeatureNode({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span data-testid="feature-node-fast-mode-badge" className="shrink-0">
-                  {data.fastMode ? (
+                <span data-testid="feature-node-mode-badge" className="shrink-0">
+                  {data.buildMode === BuildMode.Exploration ? (
+                    <FlaskConical className="h-3.5 w-3.5 text-amber-500" />
+                  ) : data.buildMode === BuildMode.Fast || data.fastMode ? (
                     <Zap className="h-3.5 w-3.5 text-amber-500" />
                   ) : (
                     <ClipboardList className="h-3.5 w-3.5 text-indigo-500" />
@@ -340,10 +344,15 @@ export function FeatureNode({
                 </span>
               </TooltipTrigger>
               <TooltipContent side="top">
-                {data.fastMode ? t('featureNode.fastMode') : t('featureNode.specDriven')}
+                {data.buildMode === BuildMode.Exploration
+                  ? t('featureNode.explorationMode')
+                  : data.buildMode === BuildMode.Fast || data.fastMode
+                    ? t('featureNode.fastMode')
+                    : t('featureNode.specDriven')}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          {data.securityMode ? <SecurityBadge mode={data.securityMode} /> : null}
           <h3 className="min-w-0 truncate text-sm font-bold">{data.name}</h3>
         </div>
 
@@ -728,15 +737,15 @@ export function FeatureNode({
             </Tooltip>
           </TooltipProvider>
         </Handle>
-      ) : data.showHandles ? (
+      ) : (
         <Handle
           type="source"
           position={sourceHandlePos}
-          isConnectable={false}
+          isConnectable={true}
           className="opacity-0!"
           style={{ top: 70 }}
         />
-      ) : null}
+      )}
     </div>
   );
 }

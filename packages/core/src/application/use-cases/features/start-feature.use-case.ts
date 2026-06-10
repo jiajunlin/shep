@@ -8,11 +8,12 @@
 
 import { injectable, inject } from 'tsyringe';
 import type { Feature, AgentRun } from '../../../domain/generated/output.js';
-import { SdlcLifecycle } from '../../../domain/generated/output.js';
+import { SdlcLifecycle, BuildMode } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { IFeatureAgentProcessService } from '../../ports/output/agents/feature-agent-process.interface.js';
 import type { IWorktreeService } from '../../ports/output/services/worktree-service.interface.js';
+import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
 import { POST_IMPLEMENTATION } from '../../../domain/lifecycle-gates.js';
 
 export interface StartFeatureResult {
@@ -30,7 +31,9 @@ export class StartFeatureUseCase {
     @inject('IFeatureAgentProcessService')
     private readonly processService: IFeatureAgentProcessService,
     @inject('IWorktreeService')
-    private readonly worktreeService: IWorktreeService
+    private readonly worktreeService: IWorktreeService,
+    @inject('ISettingsRepository')
+    private readonly settingsRepository: ISettingsRepository
   ) {}
 
   async execute(featureId: string): Promise<StartFeatureResult> {
@@ -83,7 +86,10 @@ export class StartFeatureUseCase {
     }
 
     // Check parent gate if feature has a parent
-    let targetLifecycle = resolved.fast ? SdlcLifecycle.Implementation : SdlcLifecycle.Requirements;
+    let targetLifecycle =
+      resolved.fast === true || resolved.buildMode === BuildMode.Fast
+        ? SdlcLifecycle.Implementation
+        : SdlcLifecycle.Requirements;
     let shouldSpawn = true;
 
     if (resolved.parentId) {
@@ -131,7 +137,9 @@ export class StartFeatureUseCase {
           commitEvidence: resolved.commitEvidence,
           agentType: agentRun.agentType,
           ...(resolved.fast ? { fast: true } : {}),
+          ...(resolved.buildMode === BuildMode.Exploration ? { exploration: true } : {}),
           ...(agentRun.modelId ? { model: agentRun.modelId } : {}),
+          securityMode: (await this.settingsRepository.load())?.security?.mode,
         }
       );
     }

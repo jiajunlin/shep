@@ -1,5 +1,12 @@
 import { Annotation } from '@langchain/langgraph';
-import type { ApprovalGates, CiFixRecord, Evidence } from '@/domain/generated/output.js';
+import type {
+  ApprovalGates,
+  CiFixRecord,
+  Evidence,
+  SecurityActionCategory,
+  SecurityActionDisposition,
+} from '@/domain/generated/output.js';
+import { SecurityMode } from '@/domain/generated/output.js';
 
 /**
  * State annotation for the feature-agent graph.
@@ -127,6 +134,11 @@ export const FeatureAgentAnnotation = Annotation.Root({
     reducer: (_prev, next) => next ?? _prev,
     default: () => undefined,
   }),
+  // --- Plugin MCP config (set by worker when plugins are active) ---
+  mcpConfigPath: Annotation<string | undefined>({
+    reducer: (_prev, next) => next ?? _prev,
+    default: () => undefined,
+  }),
   // --- CI watch/fix loop state ---
   ciFixAttempts: Annotation<number>({
     reducer: (_prev, next) => next,
@@ -139,6 +151,36 @@ export const FeatureAgentAnnotation = Annotation.Root({
   ciFixStatus: Annotation<'idle' | 'watching' | 'fixing' | 'success' | 'exhausted' | 'timeout'>({
     reducer: (_prev, next) => next,
     default: () => 'idle',
+  }),
+  // --- Security policy state (set once at spawn, read by nodes) ---
+  securityMode: Annotation<SecurityMode>({
+    reducer: (_prev, next) => next,
+    default: () => SecurityMode.Disabled,
+  }),
+  securityActionDispositions: Annotation<
+    Partial<Record<SecurityActionCategory, SecurityActionDisposition>>
+  >({
+    reducer: (_prev, next) => next,
+    default: () => ({}),
+  }),
+  // --- Exploration mode state channels ---
+  iterationCount: Annotation<number>({
+    reducer: (_prev, next) => next,
+    default: () => 0,
+  }),
+  maxIterations: Annotation<number>({
+    reducer: (_prev, next) => next,
+    default: () => 10,
+  }),
+  feedbackHistory: Annotation<string[]>({
+    reducer: (prev, next) => [...prev, ...next],
+    default: () => [],
+  }),
+  explorationStatus: Annotation<
+    'generating' | 'waiting-feedback' | 'applying-feedback' | 'promoting' | 'discarding' | undefined
+  >({
+    reducer: (_prev, next) => next,
+    default: () => undefined,
   }),
 });
 

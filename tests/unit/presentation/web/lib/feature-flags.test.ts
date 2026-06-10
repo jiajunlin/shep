@@ -31,6 +31,7 @@ describe('getFeatureFlags', () => {
         envDeploy: false,
         debug: true,
         reactFileManager: false,
+        scheduledWorkflows: false,
       },
     });
 
@@ -85,6 +86,14 @@ describe('getFeatureFlags', () => {
     expect(flags.reactFileManager).toBe(false);
   });
 
+  it('defaults githubImport to true when no DB setting exists', () => {
+    mockHasSettings.mockReturnValue(false);
+
+    const flags = getFeatureFlags();
+
+    expect(flags.githubImport).toBe(true);
+  });
+
   it('debug flag returns false when not in DB (no env var fallback)', () => {
     mockHasSettings.mockReturnValue(true);
     mockGetSettings.mockReturnValue({
@@ -92,6 +101,7 @@ describe('getFeatureFlags', () => {
         envDeploy: false,
         debug: false,
         reactFileManager: false,
+        scheduledWorkflows: false,
       },
     });
 
@@ -150,6 +160,7 @@ describe('featureFlags (backward-compatible const)', () => {
         envDeploy: true,
         debug: false,
         reactFileManager: false,
+        scheduledWorkflows: false,
       },
     });
 
@@ -163,6 +174,7 @@ describe('featureFlags (backward-compatible const)', () => {
         envDeploy: false,
         debug: true,
         reactFileManager: false,
+        scheduledWorkflows: false,
       },
     });
 

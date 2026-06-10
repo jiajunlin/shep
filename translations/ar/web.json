@@ -17,7 +17,9 @@
       "homePage": "Home page",
       "layout": "التخطيط",
       "database": "قاعدة البيانات",
-      "integrations": "التكاملات"
+      "integrations": "التكاملات",
+      "security": "Security",
+      "messaging": "Messaging"
     },
     "language": {
       "title": "اللغة",
@@ -70,8 +72,11 @@
       "title": "سير العمل",
       "description": "تكوين سلوك PR وبوابات الموافقة وإعدادات CI",
       "sectionDescription": "سلوك الأتمتة بعد التنفيذ",
-      "defaultFastMode": "الوضع السريع كافتراضي",
-      "defaultFastModeDescription": "تخطي مراحل SDLC والتنفيذ مباشرة من الأمر",
+      "defaultMode": "وضع الميزة الافتراضي",
+      "defaultModeDescription": "الوضع الافتراضي للميزات الجديدة المنشأة عبر CLI أو واجهة الويب",
+      "modeRegular": "عادي",
+      "modeFast": "سريع",
+      "modeExploration": "استكشاف",
       "subsections": {
         "approve": "الموافقة",
         "evidence": "الأدلة",
@@ -208,6 +213,8 @@
       "bedrockIntegrationDescription": "Enable project-bedrock memory integration (markdown project memory for AI coding agents) — surfaces toggles, drawers, and tabs across applications, repositories, and features. Requires Python 3.9+ and pipx.",
       "whatsappDispatch": "إرسال المهام عبر واتساب",
       "whatsappDispatchDescription": "أرسِل وكلاء shep ووجّههم من واتساب — أنشئ الميزات، واستقبل تحديثات الوكيل، ووافق على البوابات بالرد في محادثة.",
+      "clusters": "المجموعات",
+      "clustersDescription": "تمكين التنقل بين المجموعات وإدارة مجموعات Kubernetes في واجهة الويب",
       "hint": "ميزات تجريبية لا تزال قيد التطوير. قم بتمكينها على مسؤوليتك — قد تتغير أو تُزال في الإصدارات المستقبلية. وضع التصحيح يضيف تسجيلًا مفصلاً مفيدًا لاستكشاف الأخطاء."
     },
     "interactiveAgent": {
@@ -239,6 +246,47 @@
       "swapPosition": "تبديل مواضع الأزرار العائمة",
       "swapPositionDescription": "نقل زر المحادثة إلى اليسار وزر الإنشاء إلى اليمين",
       "hint": "يوجد زران عائمان (إنشاء ومحادثة) في الزوايا السفلية لمركز التحكم. قم بتفعيل هذا الخيار لتبديل مواضعهما."
+    },
+    "security": {
+      "title": "Supply Chain Security",
+      "sectionTitle": "Supply Chain Security",
+      "sectionDescription": "Configure security mode and review policy enforcement findings",
+      "mode": "Security mode",
+      "modeDescription": "Controls how the policy engine responds to violations",
+      "modeDisabled": "Disabled",
+      "modeAdvisory": "Advisory",
+      "modeEnforce": "Enforce",
+      "policySource": "Policy source",
+      "policySourceNone": "No policy loaded",
+      "lastEvaluation": "Last evaluation",
+      "lastEvaluationNever": "Never",
+      "recentFindings": "Recent findings",
+      "noFindings": "No security findings recorded",
+      "runEnforcement": "Run enforcement",
+      "running": "Running...",
+      "severity": {
+        "Low": "Low",
+        "Medium": "Medium",
+        "High": "High",
+        "Critical": "Critical"
+      },
+      "hint": "Security mode controls how the policy engine handles violations. Advisory mode logs findings without blocking. Enforce mode blocks risky actions and fails builds.",
+      "links": {
+        "securitySpec": "Security spec"
+      },
+      "badge": {
+        "advisory": "Security: Advisory",
+        "enforce": "Security: Enforce",
+        "disabled": "Security: Disabled"
+      },
+      "panel": {
+        "title": "Security",
+        "governance": "Governance",
+        "dependencies": "Dependencies",
+        "noFindings": "No security findings",
+        "findingsByCategory": "Findings by category",
+        "totalFindings": "{{count}} finding(s)"
+      }
     },
     "database": {
       "title": "قاعدة البيانات",
@@ -300,6 +348,8 @@
     "aspmAiReview": "AI Review",
     "aspmCompliance": "Compliance",
     "collaboration": "Collaboration",
+    "clusters": "المجموعات",
+    "plugins": "Plugins",
     "projectMemory": "Project Memory"
   },
   "sidebar": {
@@ -400,6 +450,7 @@
     "cancel": "إلغاء",
     "archive": "أرشفة",
     "fastMode": "الوضع السريع",
+    "explorationMode": "Exploration Mode",
     "specDriven": "مبني على المواصفات",
     "copied": "تم النسخ!",
     "chatWithAgent": "محادثة مع الوكيل",
@@ -742,6 +793,54 @@
     "promptCount_many": "{{count}} مطالبة",
     "overrideCount_few": "{{count}} تجاوزات",
     "overrideCount_many": "{{count}} تجاوزًا"
+  },
+  "cluster": {
+    "status": {
+      "provisioning": "جارٍ التوفير",
+      "ready": "جاهز",
+      "stopping": "جارٍ الإيقاف",
+      "stopped": "متوقف",
+      "error": "خطأ",
+      "destroying": "جارٍ التدمير"
+    },
+    "createTitle": "Create cluster",
+    "createDescription": "Spin up a local k3s Kubernetes cluster in Docker.",
+    "createAndProvision": "Create & provision",
+    "creating": "Creating…",
+    "nameLabel": "Name",
+    "namePlaceholder": "my-cluster",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "What is this cluster for?",
+    "argoCdLabel": "Install ArgoCD",
+    "argoCdDescription": "Bootstrap GitOps with ArgoCD after the cluster is ready.",
+    "provision": "Provision",
+    "destroy": "Destroy",
+    "remove": "Remove",
+    "cancel": "Cancel",
+    "removeCluster": "Remove cluster",
+    "removeConfirmTitle": "Remove this cluster?",
+    "removeConfirmDescription": "Cluster \"{{name}}\" will be removed from Shep. If it is running it will be destroyed first.",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "fieldStatus": "Status",
+    "fieldKubeconfig": "Kubeconfig",
+    "fieldArgoCd": "ArgoCD",
+    "fieldArgoCdNamespace": "ArgoCD namespace",
+    "fieldLastProvisioned": "Last provisioned",
+    "fieldLastHealthCheck": "Last health check",
+    "fieldError": "Error",
+    "tabOverview": "Overview",
+    "tabRepositories": "Repositories",
+    "tabApplications": "Applications",
+    "tabStatus": "Live status",
+    "noLinkedRepos": "No repositories linked yet.",
+    "noLinkedApps": "No applications linked yet.",
+    "statusLive": "Live cluster status updates here once the cluster is ready.",
+    "statusNotAvailable": "Live status is only available when the cluster is Ready.",
+    "linkedRepos_one": "{{count}} repo",
+    "linkedRepos_other": "{{count}} repos",
+    "linkedApps_one": "{{count}} app",
+    "linkedApps_other": "{{count}} apps"
   },
   "memory": {
     "title": "Project Memory",

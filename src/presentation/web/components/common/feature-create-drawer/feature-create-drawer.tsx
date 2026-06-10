@@ -12,10 +12,12 @@ import {
   Loader2,
   GitFork,
   FileText,
+  Plug,
   Puzzle,
   RefreshCw,
   LayoutGrid,
   ClipboardList,
+  Github,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSoundAction } from '@/hooks/use-sound-action';
@@ -40,6 +42,8 @@ import { ReactFileManagerDialog } from '@/components/common/react-file-manager-d
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { addRepository } from '@/app/actions/add-repository';
 import { BuildMode as BuildModeEnum } from '@shepai/core/domain/generated/output';
+import { GitHubImportDialog } from '@/components/common/github-import-dialog';
+import type { Repository } from '@shepai/core/domain/generated/output';
 import { pickFiles } from './pick-files';
 
 export type { FileAttachment } from '@shepai/core/infrastructure/services/file-dialog.service';
@@ -78,6 +82,9 @@ const BUILD_MODE_META: Record<BuildMode, { icon: typeof Zap; labelKey: string }>
   [BuildModeEnum.Application]: { icon: LayoutGrid, labelKey: 'createDrawer.modeApplication' },
   [BuildModeEnum.Fast]: { icon: Zap, labelKey: 'createDrawer.modeFast' },
   [BuildModeEnum.Spec]: { icon: ClipboardList, labelKey: 'createDrawer.modeSpec' },
+  // Exploration is retained in the meta map only so legacy `buildMode='exploration'`
+  // rows do not crash if they ever flow through this path; it is never rendered in the picker.
+  [BuildModeEnum.Exploration]: { icon: RefreshCw, labelKey: 'createDrawer.modeExploration' },
 };
 
 /** Minimal feature descriptor for the parent selector. */
@@ -122,6 +129,8 @@ export interface FeatureCreatePayload {
   rebaseBeforeBranch: boolean;
   /** Inject curated skills into the feature worktree. */
   injectSkills: boolean;
+  /** Per-feature plugin activation overrides (plugin name -> enabled/disabled). */
+  activePlugins?: Record<string, boolean>;
   /** Optional agent type override for this feature run */
   agentType?: string;
   /** Optional model override for this feature run */
@@ -253,6 +262,8 @@ export interface FeatureCreateDrawerProps {
    * the user into a single mode.
    */
   initialApplicationId?: string;
+  /** Installed plugins available for per-feature activation toggles. */
+  installedPlugins?: { name: string; displayName: string; enabled: boolean }[];
 }
 
 function resolveInitialMode(
@@ -260,7 +271,7 @@ function resolveInitialMode(
   workflowDefaults: WorkflowDefaults | undefined
 ): BuildMode {
   if (initialMode) return initialMode;
-  if (workflowDefaults?.fast === false) return BuildModeEnum.Spec;
+  if (workflowDefaults?.defaultMode) return workflowDefaults.defaultMode as BuildMode;
   return BuildModeEnum.Fast;
 }
 
@@ -280,6 +291,7 @@ export function FeatureCreateDrawer({
   canPushDirectly,
   initialMode,
   initialApplicationId,
+  installedPlugins,
 }: FeatureCreateDrawerProps) {
   const isAppScoped = initialApplicationId !== undefined;
   // App-scoped invocations seed the picker with `Spec` (the SDD intent) so
@@ -336,6 +348,13 @@ export function FeatureCreateDrawer({
   const [commitSpecs, setCommitSpecs] = useState(true);
   const [rebaseBeforeBranch, setRebaseBeforeBranch] = useState(true);
   const [injectSkills, setInjectSkills] = useState(workflowDefaults?.injectSkills ?? false);
+  const [pluginOverrides, setPluginOverrides] = useState<Record<string, boolean>>(() => {
+    const defaults: Record<string, boolean> = {};
+    for (const p of installedPlugins ?? []) {
+      defaults[p.name] = p.enabled;
+    }
+    return defaults;
+  });
   const [overrideAgent, setOverrideAgent] = useState<string | undefined>(undefined);
   const [overrideModel, setOverrideModel] = useState<string | undefined>(undefined);
   const [selectedRepoPath, setSelectedRepoPath] = useState<string | undefined>(
@@ -364,7 +383,7 @@ export function FeatureCreateDrawer({
       setEnableEvidence(workflowDefaults.enableEvidence);
       setCommitEvidence(workflowDefaults.commitEvidence);
       if (!effectiveInitialMode) {
-        setMode(workflowDefaults.fast !== false ? BuildModeEnum.Fast : BuildModeEnum.Spec);
+        setMode((workflowDefaults.defaultMode as BuildMode | undefined) ?? BuildModeEnum.Fast);
       }
       setInjectSkills(workflowDefaults.injectSkills ?? false);
     }
@@ -604,6 +623,7 @@ export function FeatureCreateDrawer({
         commitSpecs,
         rebaseBeforeBranch,
         injectSkills,
+        ...(Object.keys(pluginOverrides).length > 0 ? { activePlugins: pluginOverrides } : {}),
         ...(pending ? { pending } : {}),
         ...(overrideAgent ? { agentType: overrideAgent } : {}),
         ...(overrideModel ? { model: overrideModel } : {}),
@@ -630,6 +650,7 @@ export function FeatureCreateDrawer({
       commitSpecs,
       rebaseBeforeBranch,
       injectSkills,
+      pluginOverrides,
       pending,
       overrideAgent,
       overrideModel,
@@ -1207,6 +1228,47 @@ export function FeatureCreateDrawer({
                 </div>
               </div>
 
+              {/* Plugins row */}
+              {installedPlugins && installedPlugins.length > 0 ? (
+                <div className="border-input flex items-start gap-4 rounded-md border px-3 py-2.5">
+                  <span className="text-muted-foreground w-16 shrink-0 pt-0.5 text-xs font-semibold tracking-wider">
+                    PLUGINS
+                  </span>
+                  <div className="flex flex-1 flex-wrap items-center gap-4">
+                    {installedPlugins.map((plugin) => (
+                      <Tooltip key={plugin.name}>
+                        <TooltipTrigger asChild>
+                          <div className="flex cursor-pointer items-center gap-1.5">
+                            <Switch
+                              id={`plugin-${plugin.name}`}
+                              size="sm"
+                              checked={pluginOverrides[plugin.name] ?? plugin.enabled}
+                              onCheckedChange={(checked) =>
+                                setPluginOverrides((prev) => ({
+                                  ...prev,
+                                  [plugin.name]: checked,
+                                }))
+                              }
+                              disabled={isSubmitting}
+                            />
+                            <Label
+                              htmlFor={`plugin-${plugin.name}`}
+                              className="flex cursor-pointer items-center gap-1 text-xs font-medium"
+                            >
+                              <Plug className="h-3 w-3" />
+                              {plugin.displayName}
+                            </Label>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          {`${(pluginOverrides[plugin.name] ?? plugin.enabled) ? 'Disable' : 'Enable'} ${plugin.displayName} for this feature`}
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               {/* Git row */}
               <div className="border-input flex items-start gap-4 rounded-md border px-3 py-2.5">
                 <span className="text-muted-foreground w-16 shrink-0 pt-0.5 text-xs font-semibold tracking-wider">
@@ -1547,8 +1609,9 @@ export function RepositoryCombobox({
   const [isAdding, setIsAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [showReactPicker, setShowReactPicker] = useState(false);
+  const [showGitHubImport, setShowGitHubImport] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { reactFileManager: useReactFileManager } = useFeatureFlags();
+  const { reactFileManager: useReactFileManager, githubImport } = useFeatureFlags();
   const { t } = useTranslation('web');
 
   const selectedRepo = repositories.find((r) => r.path === value);
@@ -1618,6 +1681,24 @@ export function RepositoryCombobox({
     }
   }, [isAdding, useReactFileManager, addRepoFromPath]);
 
+  const handleGitHubImportComplete = useCallback(
+    (repository: Repository) => {
+      const newRepo: RepositoryOption = {
+        id: repository.id,
+        name: repository.name,
+        path: repository.path,
+        isFork: repository.isFork,
+        upstreamUrl: repository.upstreamUrl,
+      };
+      onAddRepository?.(newRepo);
+      onChange(newRepo.path);
+      setOpen(false);
+      setQuery('');
+      setShowGitHubImport(false);
+    },
+    [onAddRepository, onChange]
+  );
+
   const handleReactPickerSelect = useCallback(
     async (path: string | null) => {
       setShowReactPicker(false);
@@ -1659,8 +1740,22 @@ export function RepositoryCombobox({
               !selectedRepo && 'text-muted-foreground'
             )}
           >
-            <span className="truncate">
-              {selectedRepo ? selectedRepo.name : 'Select repository...'}
+            <span className="flex items-center gap-1.5 truncate">
+              <span className="truncate">
+                {selectedRepo ? selectedRepo.name : 'Select repository...'}
+              </span>
+              {selectedRepo?.isFork ? (
+                <span
+                  className="bg-muted text-muted-foreground shrink-0 rounded px-1 py-0.5 text-[10px] font-medium"
+                  title={
+                    selectedRepo.upstreamUrl
+                      ? `Fork of ${selectedRepo.upstreamUrl.replace('https://github.com/', '')}`
+                      : 'Forked repository'
+                  }
+                >
+                  Fork
+                </span>
+              ) : null}
             </span>
             <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
           </button>
@@ -1726,8 +1821,19 @@ export function RepositoryCombobox({
               )}
             </div>
 
-            {/* Add new repository — pinned outside scroll area */}
+            {/* Actions — pinned outside scroll area */}
             <Separator />
+            {githubImport ? (
+              <button
+                type="button"
+                onClick={() => setShowGitHubImport(true)}
+                className="hover:bg-accent hover:text-accent-foreground flex w-full items-center gap-2 px-3 py-2 text-sm"
+                data-testid="import-github-item"
+              >
+                <Github className="h-4 w-4 shrink-0" />
+                <span>Import from GitHub...</span>
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={handleAddRepository}
@@ -1756,6 +1862,11 @@ export function RepositoryCombobox({
           if (!isOpen) setShowReactPicker(false);
         }}
         onSelect={handleReactPickerSelect}
+      />
+      <GitHubImportDialog
+        open={showGitHubImport}
+        onOpenChange={setShowGitHubImport}
+        onImportComplete={handleGitHubImportComplete}
       />
     </>
   );

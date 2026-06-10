@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, BackgroundVariant, Panel } from '@xyflow/react';
 import type { Connection, Edge, NodeChange, OnMoveEnd, Viewport } from '@xyflow/react';
 import { Plus } from 'lucide-react';
@@ -14,9 +14,15 @@ import { RepositoryNode } from '@/components/common/repository-node';
 import type { RepositoryNodeType, RepositoryNodeData } from '@/components/common/repository-node';
 import { ApplicationNode } from '@/components/common/application-node/application-node';
 import type { ApplicationNodeType } from '@/components/common/application-node/application-node-config';
+import { ClusterNode } from '@/components/common/cluster-node/cluster-node';
+import type { ClusterNodeType } from '@/components/common/cluster-node/cluster-node-config';
 import { DependencyEdge } from './dependency-edge';
 
-export type CanvasNodeType = FeatureNodeType | RepositoryNodeType | ApplicationNodeType;
+export type CanvasNodeType =
+  | FeatureNodeType
+  | RepositoryNodeType
+  | ApplicationNodeType
+  | ClusterNodeType;
 
 export interface FeaturesCanvasProps {
   nodes: CanvasNodeType[];
@@ -29,6 +35,7 @@ export interface FeaturesCanvasProps {
   onNodeClick?: (event: React.MouseEvent, node: CanvasNodeType) => void;
   onPaneClick?: (event: React.MouseEvent) => void;
   onConnect?: (connection: Connection) => void;
+  onEdgesDelete?: (edges: Edge[]) => void;
   onCanvasDrag?: () => void;
   onMoveEnd?: OnMoveEnd;
   toolbar?: React.ReactNode;
@@ -48,6 +55,7 @@ export function FeaturesCanvas({
   onNodesChange,
   onAddFeature,
   onConnect,
+  onEdgesDelete,
   onNodeClick,
   onPaneClick,
   onCanvasDrag,
@@ -62,6 +70,7 @@ export function FeaturesCanvas({
       featureNode: FeatureNode,
       repositoryNode: RepositoryNode,
       applicationNode: ApplicationNode,
+      clusterNode: ClusterNode,
     }),
     []
   );
@@ -143,6 +152,16 @@ export function FeaturesCanvas({
       />
     ) : null;
 
+  // Reject connections at the React Flow visual level — prevents the connection
+  // line from snapping to invalid targets (non-feature nodes, self-connections).
+  const isValidConnection = useCallback((connection: Connection | Edge) => {
+    const { source, target } = connection;
+    if (!source || !target) return false;
+    if (source === target) return false;
+    // Only feature-to-feature connections are valid
+    return source.startsWith('feat-') && target.startsWith('feat-');
+  }, []);
+
   const overlayContent = emptyState ?? fallbackEmptyState;
 
   return (
@@ -157,15 +176,17 @@ export function FeaturesCanvas({
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onConnect={onConnect}
+        onEdgesDelete={onEdgesDelete}
         onNodesChange={onNodesChange}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
         onMoveStart={onCanvasDrag}
         onMoveEnd={onMoveEnd}
+        isValidConnection={isValidConnection}
         defaultViewport={defaultViewport ?? FALLBACK_VIEWPORT}
         nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable={false}
+        nodesConnectable={true}
+        elementsSelectable={true}
         proOptions={{ hideAttribution: true }}
         className="[&_.react-flow__pane]:!cursor-default"
       >

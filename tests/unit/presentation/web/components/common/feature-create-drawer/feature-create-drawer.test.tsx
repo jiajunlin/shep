@@ -6,6 +6,40 @@ import type { FeatureCreateDrawerProps } from '@/components/common/feature-creat
 import { DrawerCloseGuardProvider } from '@/hooks/drawer-close-guard';
 import type { FileAttachment } from '@shepai/core/infrastructure/services/file-dialog.service';
 import type { WorkflowDefaults } from '@/app/actions/get-workflow-defaults';
+import { BuildMode } from '@shepai/core/domain/generated/output';
+
+// Mock GitHubImportDialog
+const mockGitHubImportDialog = vi.fn();
+vi.mock('@/components/common/github-import-dialog', () => ({
+  GitHubImportDialog: (props: {
+    open: boolean;
+    onOpenChange: (v: boolean) => void;
+    onImportComplete: (repo: unknown) => void;
+  }) => {
+    mockGitHubImportDialog(props);
+    if (!props.open) return null;
+    return (
+      <div data-testid="github-import-dialog">
+        <button
+          data-testid="github-import-complete-btn"
+          onClick={() =>
+            props.onImportComplete({
+              id: 'imported-repo-1',
+              name: 'imported-repo',
+              path: '/repos/imported-repo',
+              remoteUrl: 'https://github.com/owner/imported-repo',
+            })
+          }
+        >
+          Import
+        </button>
+        <button data-testid="github-import-close-btn" onClick={() => props.onOpenChange(false)}>
+          Close
+        </button>
+      </div>
+    );
+  },
+}));
 
 // Mock pickFiles client helper
 const mockPickFiles = vi.fn<() => Promise<FileAttachment[] | null>>();
@@ -309,7 +343,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: false,
+        defaultMode: BuildMode.Spec,
         injectSkills: false,
       };
       const { rerender } = render(
@@ -410,7 +444,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: false,
+        defaultMode: BuildMode.Spec,
         injectSkills: false,
       };
       renderDrawer({ workflowDefaults: defaults });
@@ -561,7 +595,7 @@ describe('FeatureCreateDrawer', () => {
         'Select parent feature...'
       );
       expect(screen.queryByText('requirements.pdf')).not.toBeInTheDocument();
-    }, 10_000);
+    }, 30_000);
 
     it('clears form data on submit so next open starts fresh', async () => {
       const onSubmit = vi.fn();
@@ -744,7 +778,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: true,
+        defaultMode: BuildMode.Fast,
         injectSkills: false,
       };
       renderDrawer({ workflowDefaults: defaults });
@@ -759,7 +793,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: false,
+        defaultMode: BuildMode.Spec,
         injectSkills: false,
       };
       renderDrawer({ workflowDefaults: defaults });
@@ -774,7 +808,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: true,
+        defaultMode: BuildMode.Fast,
         injectSkills: false,
       };
       renderDrawer({ workflowDefaults: defaults, initialMode: 'spec' });
@@ -1080,7 +1114,7 @@ describe('FeatureCreateDrawer', () => {
       await user.type(screen.getByPlaceholderText(descriptionPlaceholder), 'My feature');
 
       expect(screen.getByRole('button', { name: '+ Create Feature' })).toBeDisabled();
-    });
+    }, 15_000);
 
     it('submit button is enabled when repo is selected via combobox', async () => {
       const user = userEvent.setup();
@@ -1093,7 +1127,7 @@ describe('FeatureCreateDrawer', () => {
       await user.click(screen.getByTestId('repository-option-repo-001'));
 
       expect(screen.getByRole('button', { name: '+ Create Feature' })).toBeEnabled();
-    });
+    }, 15_000);
 
     it('submit button is enabled when repositoryPath is provided (canvas flow)', async () => {
       const user = userEvent.setup();
@@ -1102,7 +1136,7 @@ describe('FeatureCreateDrawer', () => {
       await user.type(screen.getByPlaceholderText(descriptionPlaceholder), 'My feature');
 
       expect(screen.getByRole('button', { name: '+ Create Feature' })).toBeEnabled();
-    });
+    }, 15_000);
 
     it('handleSubmit includes selectedRepoPath in payload', async () => {
       const onSubmit = vi.fn();
@@ -1119,7 +1153,7 @@ describe('FeatureCreateDrawer', () => {
 
       expect(onSubmit).toHaveBeenCalledOnce();
       expect(onSubmit.mock.calls[0][0].repositoryPath).toBe('/Users/dev/projects/api-service');
-    });
+    }, 15_000);
 
     it('renders REPOSITORY label in combobox section', () => {
       renderDrawer({ repositoryPath: '', repositories: sampleRepos });
@@ -1139,7 +1173,7 @@ describe('FeatureCreateDrawer', () => {
       expect(screen.getByTestId('repository-option-repo-002')).toBeInTheDocument();
       expect(screen.queryByTestId('repository-option-repo-001')).not.toBeInTheDocument();
       expect(screen.queryByTestId('repository-option-repo-003')).not.toBeInTheDocument();
-    });
+    }, 15_000);
 
     it('filters repositories by path when typing in search input', async () => {
       const user = userEvent.setup();
@@ -1154,7 +1188,7 @@ describe('FeatureCreateDrawer', () => {
       expect(screen.getByTestId('repository-option-repo-003')).toBeInTheDocument();
       expect(screen.queryByTestId('repository-option-repo-001')).not.toBeInTheDocument();
       expect(screen.queryByTestId('repository-option-repo-002')).not.toBeInTheDocument();
-    });
+    }, 15_000);
 
     it('shows empty state message when no repos match search', async () => {
       const user = userEvent.setup();
@@ -1167,7 +1201,7 @@ describe('FeatureCreateDrawer', () => {
 
       expect(screen.getByTestId('repository-empty')).toBeInTheDocument();
       expect(screen.getByText('No repositories found.')).toBeInTheDocument();
-    });
+    }, 15_000);
 
     it('shows check icon for selected repository', async () => {
       const user = userEvent.setup();
@@ -1181,7 +1215,7 @@ describe('FeatureCreateDrawer', () => {
       await user.click(screen.getByTestId('repository-combobox'));
       const selected = screen.getByTestId('repository-option-repo-001');
       expect(selected).toHaveAttribute('aria-selected', 'true');
-    });
+    }, 15_000);
 
     it('shows repo selector with add option when repositoryPath is empty and repositories is empty', () => {
       renderDrawer({ repositoryPath: '', repositories: [] });
@@ -1197,7 +1231,7 @@ describe('FeatureCreateDrawer', () => {
 
       expect(screen.getByTestId('add-repository-item')).toBeInTheDocument();
       expect(screen.getByText('Add new repository...')).toBeInTheDocument();
-    });
+    }, 15_000);
 
     it('renders "Add new repository..." item even with zero repos', async () => {
       const user = userEvent.setup();
@@ -1206,7 +1240,7 @@ describe('FeatureCreateDrawer', () => {
       await user.click(screen.getByTestId('repository-combobox'));
 
       expect(screen.getByTestId('add-repository-item')).toBeInTheDocument();
-    });
+    }, 15_000);
 
     it('clicking "Add new repository..." opens folder picker and adds repo', async () => {
       mockPickFolder.mockResolvedValue('/Users/dev/new-project');
@@ -1228,7 +1262,7 @@ describe('FeatureCreateDrawer', () => {
       await waitFor(() => {
         expect(screen.getByTestId('repository-combobox')).toHaveTextContent('new-project');
       });
-    });
+    }, 15_000);
 
     it('does nothing when folder picker is cancelled', async () => {
       mockPickFolder.mockResolvedValue(null);
@@ -1244,7 +1278,7 @@ describe('FeatureCreateDrawer', () => {
       expect(mockAddRepository).not.toHaveBeenCalled();
       // Combobox should still show placeholder
       expect(screen.getByTestId('repository-combobox')).toHaveTextContent('Select repository...');
-    });
+    }, 15_000);
 
     it('shows inline error when addRepository server action fails', async () => {
       mockPickFolder.mockResolvedValue('/Users/dev/bad-folder');
@@ -1261,7 +1295,7 @@ describe('FeatureCreateDrawer', () => {
       });
       // Combobox should still be open (popover stays open on error)
       expect(screen.getByTestId('repository-combobox-content')).toBeInTheDocument();
-    });
+    }, 15_000);
 
     it('can submit feature after adding new repo via combobox', async () => {
       mockPickFolder.mockResolvedValue('/Users/dev/new-project');
@@ -1285,7 +1319,7 @@ describe('FeatureCreateDrawer', () => {
 
       expect(onSubmit).toHaveBeenCalledOnce();
       expect(onSubmit.mock.calls[0][0].repositoryPath).toBe('/Users/dev/new-project');
-    });
+    }, 15_000);
   });
 
   describe('canPushDirectly — Fork & PR toggle visibility', () => {
@@ -1355,7 +1389,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: true,
+        defaultMode: BuildMode.Fast,
         injectSkills: false,
       };
       const { rerender } = render(

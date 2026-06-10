@@ -17,7 +17,9 @@
       "homePage": "Home page",
       "layout": "פריסה",
       "database": "מסד נתונים",
-      "integrations": "אינטגרציות"
+      "integrations": "אינטגרציות",
+      "security": "Security",
+      "messaging": "Messaging"
     },
     "language": {
       "title": "שפה",
@@ -70,8 +72,11 @@
       "title": "תהליך עבודה",
       "description": "הגדר התנהגות PR, שערי אישור והגדרות CI",
       "sectionDescription": "התנהגות אוטומציה לאחר מימוש",
-      "defaultFastMode": "מצב מהיר כברירת מחדל",
-      "defaultFastModeDescription": "דילוג על שלבי SDLC ויישום ישירות מהפרומפט",
+      "defaultMode": "מצב ברירת מחדל לפיצ'ר",
+      "defaultModeDescription": "מצב ברירת מחדל לפיצ'רים חדשים שנוצרים דרך CLI או ממשק ה-Web",
+      "modeRegular": "רגיל",
+      "modeFast": "מהיר",
+      "modeExploration": "חקירה",
       "subsections": {
         "approve": "אישור",
         "evidence": "ראיות",
@@ -208,6 +213,8 @@
       "bedrockIntegrationDescription": "Enable project-bedrock memory integration (markdown project memory for AI coding agents) — surfaces toggles, drawers, and tabs across applications, repositories, and features. Requires Python 3.9+ and pipx.",
       "whatsappDispatch": "שיגור משימות ב-WhatsApp",
       "whatsappDispatchDescription": "שגרו והנחו את סוכני shep מתוך WhatsApp — צרו פיצ׳רים, קבלו עדכוני סוכן ואשרו שערים על ידי מענה בשרשור צ׳אט.",
+      "clusters": "אשכולות",
+      "clustersDescription": "הפעלת ניווט אשכולות וניהול אשכולות Kubernetes בממשק הווב",
       "hint": "תכונות ניסיוניות שעדיין בפיתוח. הפעל על אחריותך — הן עשויות להשתנות או להיות מוסרות בגרסאות עתידיות. מצב ניפוי שגיאות מוסיף רישום מפורט שימושי לפתרון בעיות."
     },
     "interactiveAgent": {
@@ -239,6 +246,47 @@
       "swapPosition": "החלפת מיקומי כפתורים צפים",
       "swapPositionDescription": "העברת כפתור הצ'אט לשמאל וכפתור היצירה לימין",
       "hint": "שני כפתורי הפעולה הצפים (יצירה וצ'אט) נמצאים בפינות התחתונות של מרכז הבקרה. הפעל את האפשרות הזו כדי להחליף את מיקומיהם."
+    },
+    "security": {
+      "title": "Supply Chain Security",
+      "sectionTitle": "Supply Chain Security",
+      "sectionDescription": "Configure security mode and review policy enforcement findings",
+      "mode": "Security mode",
+      "modeDescription": "Controls how the policy engine responds to violations",
+      "modeDisabled": "Disabled",
+      "modeAdvisory": "Advisory",
+      "modeEnforce": "Enforce",
+      "policySource": "Policy source",
+      "policySourceNone": "No policy loaded",
+      "lastEvaluation": "Last evaluation",
+      "lastEvaluationNever": "Never",
+      "recentFindings": "Recent findings",
+      "noFindings": "No security findings recorded",
+      "runEnforcement": "Run enforcement",
+      "running": "Running...",
+      "severity": {
+        "Low": "Low",
+        "Medium": "Medium",
+        "High": "High",
+        "Critical": "Critical"
+      },
+      "hint": "Security mode controls how the policy engine handles violations. Advisory mode logs findings without blocking. Enforce mode blocks risky actions and fails builds.",
+      "links": {
+        "securitySpec": "Security spec"
+      },
+      "badge": {
+        "advisory": "Security: Advisory",
+        "enforce": "Security: Enforce",
+        "disabled": "Security: Disabled"
+      },
+      "panel": {
+        "title": "Security",
+        "governance": "Governance",
+        "dependencies": "Dependencies",
+        "noFindings": "No security findings",
+        "findingsByCategory": "Findings by category",
+        "totalFindings": "{{count}} finding(s)"
+      }
     },
     "database": {
       "title": "מסד נתונים",
@@ -300,6 +348,8 @@
     "aspmAiReview": "AI Review",
     "aspmCompliance": "Compliance",
     "collaboration": "Collaboration",
+    "clusters": "אשכולות",
+    "plugins": "Plugins",
     "projectMemory": "Project Memory"
   },
   "sidebar": {
@@ -400,6 +450,7 @@
     "cancel": "ביטול",
     "archive": "ארכיון",
     "fastMode": "מצב מהיר",
+    "explorationMode": "Exploration Mode",
     "specDriven": "מבוסס מפרט",
     "copied": "הועתק!",
     "chatWithAgent": "צ'אט עם הסוכן",
@@ -742,6 +793,54 @@
     "promptCount_many": "{{count}} פרומפטים",
     "overrideCount_few": "{{count}} דריסות",
     "overrideCount_many": "{{count}} דריסות"
+  },
+  "cluster": {
+    "status": {
+      "provisioning": "מקצה",
+      "ready": "מוכן",
+      "stopping": "נעצר",
+      "stopped": "עצור",
+      "error": "שגיאה",
+      "destroying": "משמיד"
+    },
+    "createTitle": "Create cluster",
+    "createDescription": "Spin up a local k3s Kubernetes cluster in Docker.",
+    "createAndProvision": "Create & provision",
+    "creating": "Creating…",
+    "nameLabel": "Name",
+    "namePlaceholder": "my-cluster",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "What is this cluster for?",
+    "argoCdLabel": "Install ArgoCD",
+    "argoCdDescription": "Bootstrap GitOps with ArgoCD after the cluster is ready.",
+    "provision": "Provision",
+    "destroy": "Destroy",
+    "remove": "Remove",
+    "cancel": "Cancel",
+    "removeCluster": "Remove cluster",
+    "removeConfirmTitle": "Remove this cluster?",
+    "removeConfirmDescription": "Cluster \"{{name}}\" will be removed from Shep. If it is running it will be destroyed first.",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "fieldStatus": "Status",
+    "fieldKubeconfig": "Kubeconfig",
+    "fieldArgoCd": "ArgoCD",
+    "fieldArgoCdNamespace": "ArgoCD namespace",
+    "fieldLastProvisioned": "Last provisioned",
+    "fieldLastHealthCheck": "Last health check",
+    "fieldError": "Error",
+    "tabOverview": "Overview",
+    "tabRepositories": "Repositories",
+    "tabApplications": "Applications",
+    "tabStatus": "Live status",
+    "noLinkedRepos": "No repositories linked yet.",
+    "noLinkedApps": "No applications linked yet.",
+    "statusLive": "Live cluster status updates here once the cluster is ready.",
+    "statusNotAvailable": "Live status is only available when the cluster is Ready.",
+    "linkedRepos_one": "{{count}} repo",
+    "linkedRepos_other": "{{count}} repos",
+    "linkedApps_one": "{{count}} app",
+    "linkedApps_other": "{{count}} apps"
   },
   "memory": {
     "title": "Project Memory",

@@ -78,6 +78,10 @@ describe('updateSettings', () => {
         bedrockIntegration: false,
         whatsappDispatch: false,
         aspm: false,
+        clusters: false,
+        supplyChainSecurity: true,
+        scheduledWorkflows: false,
+        githubImport: true,
       },
     };
     updateSettings(updated);

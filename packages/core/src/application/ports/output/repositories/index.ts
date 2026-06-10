@@ -46,3 +46,6 @@ export type {
   ISdlcSubTaskRepository,
   SdlcSubTaskUpsertFields,
 } from './sdlc-subtask-repository.interface.js';
+export type { IWorkflowRepository, WorkflowListFilters } from './workflow-repository.interface.js';
+export type { IWorkflowExecutionRepository } from './workflow-execution-repository.interface.js';
+export type { IPluginRepository } from './plugin-repository.interface.js';

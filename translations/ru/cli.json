@@ -187,6 +187,27 @@
         "failedToList": "Ошибка при получении списка инструментов: {{error}}"
       }
     },
+    "security": {
+      "description": "Supply-chain security policy management",
+      "enforce": {
+        "description": "Evaluate repository security posture and enforce policy",
+        "repoOption": "Repository path (defaults to current directory)",
+        "outputOption": "Output format (table, json, yaml)",
+        "passed": "Security enforcement passed",
+        "failed": "Security enforcement failed",
+        "advisoryNote": "Mode is Advisory — findings are reported but do not block",
+        "disabledNote": "Security mode is Disabled — no checks performed",
+        "modeLabel": "Mode",
+        "sourceLabel": "Source",
+        "dependencyFindingsLabel": "Dependency Findings",
+        "releaseIntegrityLabel": "Release Integrity",
+        "totalFindingsLabel": "Total Findings",
+        "governanceFindingsLabel": "GitHub Governance (audit-only)",
+        "noFindings": "No findings",
+        "failedToEnforce": "Failed to evaluate security posture",
+        "flagDisabledNote": "Supply chain security feature flag is off — enforce is a no-op"
+      }
+    },
     "feat": {
       "description": "Управление функциями через жизненный цикл SDLC",
       "new": {
@@ -204,6 +225,8 @@
         "pendingOption": "Создать функцию без запуска агента",
         "fastOption": "Пропустить фазы SDLC и реализовать непосредственно из вашего промпта (по умолчанию: вкл.)",
         "noFastOption": "Выполнить все фазы SDLC (анализ → требования → план → реализация)",
+        "exploreOption": "Start an exploration/prototyping session for iterative design",
+        "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
         "modelOption": "Идентификатор модели LLM для этого запуска (например, claude-opus-4-6)",
         "noRebaseOption": "Skip syncing main from remote before creating the feature branch",
         "injectSkillsOption": "Inject curated skills into the worktree",
@@ -419,6 +442,28 @@
         "restoredLabel": "Восстановлено:",
         "failedToUnarchive": "Не удалось восстановить функцию из архива"
       },
+      "feedback": {
+        "description": "Send feedback on an exploration prototype to iterate",
+        "idArgument": "Feature ID or prefix",
+        "feedbackArgument": "Feedback text for the next iteration",
+        "feedbackSubmitted": "Feedback submitted for: {{name}}",
+        "iterationLabel": "Iteration:",
+        "agentLabel": "Agent:",
+        "agentIterating": "iterating on feedback",
+        "notExploration": "Feature \"{{name}}\" is not in exploration mode (mode: {{mode}}, lifecycle: {{lifecycle}})",
+        "failedToSubmit": "Failed to submit feedback"
+      },
+      "promote": {
+        "description": "Promote an exploration feature to Regular or Fast mode",
+        "idArgument": "Feature ID or prefix",
+        "fastOption": "Promote to Fast mode (skip SDLC phases)",
+        "promoted": "Exploration promoted: {{name}}",
+        "modeLabel": "Mode:",
+        "statusLabel": "Status:",
+        "agentLabel": "Agent:",
+        "agentSpawned": "spawned for {{mode}} mode",
+        "failedToPromote": "Failed to promote exploration"
+      },
       "resolveWaiting": {
         "featureNotFound": "Функция не найдена: \"{{id}}\"",
         "noAgentRun": "Функция \"{{name}}\" не имеет запуска агента",
@@ -539,6 +584,107 @@
       "resolve": {
         "multipleMatch": "Multiple applications match prefix \"{{id}}\": {{matches}}",
         "notFound": "Application not found: {{id}}"
+      }
+    },
+    "cluster": {
+      "description": "Управление кластерами",
+      "new": {
+        "description": "Создать новый кластер",
+        "nameArgument": "Имя кластера",
+        "argocdOption": "Включить ArgoCD для непрерывной доставки через GitOps",
+        "provisionOption": "Начать развёртывание сразу после создания",
+        "spinnerText": "Создание кластера",
+        "clusterCreated": "Кластер создан",
+        "idLabel": "ID:",
+        "nameLabel": "Имя:",
+        "slugLabel": "Slug:",
+        "statusLabel": "Статус:",
+        "argocdLabel": "ArgoCD:",
+        "provisioningStarted": "Развёртывание начато",
+        "failedToCreate": "Не удалось создать кластер"
+      },
+      "ls": {
+        "description": "Список кластеров",
+        "title": "Кластеры",
+        "idColumn": "ID",
+        "nameColumn": "Имя",
+        "statusColumn": "Статус",
+        "argocdColumn": "ArgoCD",
+        "reposColumn": "Репозитории",
+        "appsColumn": "Приложения",
+        "noClusters": "Кластеры не найдены",
+        "failedToList": "Не удалось получить список кластеров"
+      },
+      "show": {
+        "description": "Показать детали кластера",
+        "idArgument": "ID кластера, slug или префикс",
+        "title": "Кластер: {{name}}",
+        "nameLabel": "Имя",
+        "slugLabel": "Slug",
+        "statusLabel": "Статус",
+        "descriptionLabel": "Описание",
+        "argocdLabel": "ArgoCD",
+        "argocdNamespaceLabel": "Пространство имён ArgoCD",
+        "kubeconfigLabel": "Kubeconfig",
+        "k3dNameLabel": "Имя k3d",
+        "nodeCountLabel": "Количество узлов",
+        "errorLabel": "Ошибка",
+        "configTitle": "Конфигурация",
+        "timestampsTitle": "Временные метки",
+        "createdLabel": "Создан",
+        "updatedLabel": "Обновлён",
+        "provisionedLabel": "Последнее развёртывание",
+        "healthCheckLabel": "Последняя проверка состояния",
+        "linkedTitle": "Связанные сущности",
+        "reposLabel": "Репозитории",
+        "appsLabel": "Приложения",
+        "failedToShow": "Не удалось показать кластер"
+      },
+      "del": {
+        "description": "Удалить кластер",
+        "idArgument": "ID кластера, slug или префикс",
+        "forceOption": "Пропустить подтверждение",
+        "confirmDelete": "Удалить кластер \"{{name}}\"? Будет уничтожен, если активен.",
+        "cancelled": "Отменено",
+        "clusterDeleted": "Кластер удалён",
+        "nameLabel": "Имя:",
+        "slugLabel": "Slug:",
+        "failedToDelete": "Не удалось удалить кластер"
+      },
+      "link": {
+        "description": "Привязать репозиторий или приложение к кластеру",
+        "clusterArgument": "ID кластера, slug или префикс",
+        "entityArgument": "ID репозитория или приложения",
+        "linked": "Привязано к кластеру",
+        "clusterLabel": "Кластер:",
+        "entityLabel": "Сущность:",
+        "failedToLink": "Не удалось привязать сущность к кластеру"
+      },
+      "unlink": {
+        "description": "Отвязать репозиторий или приложение от кластера",
+        "clusterArgument": "ID кластера, slug или префикс",
+        "entityArgument": "ID репозитория или приложения",
+        "unlinked": "Отвязано от кластера",
+        "clusterLabel": "Кластер:",
+        "entityLabel": "Сущность:",
+        "failedToUnlink": "Не удалось отвязать сущность от кластера"
+      },
+      "status": {
+        "description": "Показать текущий статус кластера",
+        "idArgument": "ID кластера, slug или префикс",
+        "title": "Статус кластера: {{name}}",
+        "statusLabel": "Статус",
+        "podCountLabel": "Поды",
+        "serviceCountLabel": "Сервисы",
+        "argocdLabel": "ArgoCD",
+        "notReady": "Кластер не в состоянии Готов",
+        "podsTitle": "Поды",
+        "servicesTitle": "Сервисы",
+        "failedToGetStatus": "Не удалось получить статус кластера"
+      },
+      "resolve": {
+        "multipleMatch": "Несколько кластеров соответствуют префиксу \"{{id}}\": {{matches}}",
+        "notFound": "Кластер не найден: {{id}}"
       }
     },
     "agent": {
@@ -704,6 +850,88 @@
         "description": "Post a completed review to GitHub",
         "idArgument": "Review ID (or prefix)",
         "failedToPost": "Failed to post review to GitHub"
+      }
+    },
+    "plugin": {
+      "description": "Manage AI tool plugins",
+      "add": {
+        "description": "Install a plugin from catalog or custom configuration",
+        "nameArg": "Plugin name from the curated catalog",
+        "typeOption": "Plugin type for custom install (mcp, hook, cli)",
+        "commandOption": "MCP server command for custom install",
+        "transportOption": "MCP transport protocol (stdio, http)",
+        "nameOption": "Plugin name for custom install",
+        "success": "Plugin \"{{name}}\" installed successfully",
+        "failed": "Failed to install plugin",
+        "customRequiresName": "Custom plugin install requires --name",
+        "customRequiresType": "Custom plugin install requires --type (mcp, hook, cli)",
+        "invalidType": "Invalid plugin type \"{{type}}\". Must be one of: mcp, hook, cli"
+      },
+      "remove": {
+        "description": "Remove an installed plugin",
+        "nameArg": "Name of the plugin to remove",
+        "success": "Plugin \"{{name}}\" removed",
+        "failed": "Failed to remove plugin"
+      },
+      "list": {
+        "description": "List all installed plugins",
+        "title": "Installed Plugins",
+        "nameColumn": "Name",
+        "typeColumn": "Type",
+        "statusColumn": "Status",
+        "healthColumn": "Health",
+        "sourceColumn": "Source",
+        "noPlugins": "No plugins installed. Run 'shep plugin catalog' to browse available plugins.",
+        "failed": "Failed to list plugins"
+      },
+      "enable": {
+        "description": "Enable a plugin globally",
+        "nameArg": "Name of the plugin to enable",
+        "success": "Plugin \"{{name}}\" enabled",
+        "failed": "Failed to enable plugin"
+      },
+      "disable": {
+        "description": "Disable a plugin globally",
+        "nameArg": "Name of the plugin to disable",
+        "success": "Plugin \"{{name}}\" disabled",
+        "failed": "Failed to disable plugin"
+      },
+      "configure": {
+        "description": "Configure plugin settings",
+        "nameArg": "Name of the plugin to configure",
+        "toolGroupsOption": "Comma-separated list of tool groups to enable",
+        "success": "Plugin \"{{name}}\" configured",
+        "noOptions": "No configuration options provided. Use --tool-groups to set active tool groups.",
+        "failed": "Failed to configure plugin"
+      },
+      "status": {
+        "description": "Show detailed health status of a plugin",
+        "nameArg": "Name of the plugin to check (omit for all)",
+        "title": "Plugin Health Status",
+        "allTitle": "Plugin Health Check",
+        "nameLabel": "Name",
+        "typeLabel": "Type",
+        "healthLabel": "Health",
+        "messageLabel": "Details",
+        "enabledLabel": "Enabled",
+        "runtimeLabel": "Runtime",
+        "transportLabel": "Transport",
+        "envVarsLabel": "Required Env Vars",
+        "toolGroupsLabel": "Tool Groups",
+        "activeGroupsLabel": "Active Groups",
+        "noPlugins": "No plugins installed.",
+        "failed": "Failed to check plugin health"
+      },
+      "catalog": {
+        "description": "Browse available plugins from the curated catalog",
+        "title": "Plugin Catalog",
+        "nameColumn": "Name",
+        "typeColumn": "Type",
+        "descriptionColumn": "Description",
+        "statusColumn": "Status",
+        "installed": "Installed",
+        "available": "Available",
+        "failed": "Failed to load plugin catalog"
       }
     }
   },

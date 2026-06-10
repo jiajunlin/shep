@@ -22,6 +22,7 @@ import {
   EditorType,
   Language,
   SkillSourceType,
+  SecurityMode,
   TerminalType,
 } from '@/domain/generated/output.js';
 
@@ -71,6 +72,9 @@ function createTestSettings(overrides: Partial<Settings> = {}): Settings {
         prChecksFailed: true,
         prBlocked: true,
         mergeReviewReady: true,
+        workflowStarted: true,
+        workflowCompleted: true,
+        workflowFailed: true,
       },
     },
     workflow: {
@@ -84,7 +88,10 @@ function createTestSettings(overrides: Partial<Settings> = {}): Settings {
       enableEvidence: false,
       commitEvidence: false,
       ciWatchEnabled: true,
-      defaultFastMode: true,
+      defaultMode: 'Fast',
+    },
+    security: {
+      mode: SecurityMode.Advisory,
     },
     onboardingComplete: false,
     ...overrides,
@@ -131,11 +138,14 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     notif_evt_pr_checks_failed: 1,
     notif_evt_pr_blocked: 1,
     notif_evt_merge_review_ready: 1,
+    notif_evt_workflow_started: 1,
+    notif_evt_workflow_completed: 1,
+    notif_evt_workflow_failed: 1,
     workflow_open_pr_on_impl_complete: 0,
     workflow_enable_evidence: 0,
     workflow_commit_evidence: 0,
     hide_ci_status: 1,
-    default_fast_mode: 1,
+    default_mode: 'Fast',
     ci_watch_enabled: 1,
     ci_max_fix_attempts: null,
     ci_watch_timeout_ms: null,
@@ -162,11 +172,15 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     feature_flag_bedrock_integration: 0,
     feature_flag_whatsapp_dispatch: 0,
     feature_flag_aspm: 0,
+    feature_flag_clusters: 0,
+    feature_flag_supply_chain_security: 1,
+    feature_flag_scheduled_workflows: 0,
     interactive_agent_enabled: 1,
     interactive_agent_auto_timeout_minutes: 15,
     interactive_agent_max_concurrent_sessions: 3,
     auto_archive_delay_minutes: 10,
     fab_position_swapped: 0,
+    exploration_max_iterations: null,
     skill_injection_enabled: 0,
     skill_injection_skills: null,
     default_home_page: 'control-center',
@@ -179,6 +193,34 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     whatsapp_cloud_api_access_token: null,
     whatsapp_cloud_api_verify_token: null,
     whatsapp_cloud_api_app_secret: null,
+    security_mode: 'Advisory',
+    security_last_evaluation_at: null,
+    security_policy_source: null,
+    // Messaging columns (migration 056) — all default to "unconfigured".
+    messaging_enabled: 0,
+    messaging_gateway_url: null,
+    messaging_device_id: null,
+    messaging_gateway_client_id: null,
+    messaging_debounce_ms: null,
+    messaging_chat_buffer_ms: null,
+    messaging_telegram_enabled: 0,
+    messaging_telegram_paired: 0,
+    messaging_telegram_chat_id: null,
+    messaging_telegram_route_id: null,
+    messaging_telegram_route_token: null,
+    messaging_telegram_public_url: null,
+    messaging_telegram_bot_token: null,
+    messaging_telegram_pending_code: null,
+    messaging_telegram_pending_expires_at: null,
+    messaging_whatsapp_enabled: 0,
+    messaging_whatsapp_paired: 0,
+    messaging_whatsapp_chat_id: null,
+    messaging_whatsapp_route_id: null,
+    messaging_whatsapp_route_token: null,
+    messaging_whatsapp_public_url: null,
+    messaging_whatsapp_bot_token: null,
+    messaging_whatsapp_pending_code: null,
+    messaging_whatsapp_pending_expires_at: null,
     ...overrides,
   };
 }
@@ -203,6 +245,9 @@ describe('Settings Mapper', () => {
             prChecksFailed: true,
             prBlocked: true,
             mergeReviewReady: true,
+            workflowStarted: true,
+            workflowCompleted: true,
+            workflowFailed: true,
           },
         },
       });
@@ -230,6 +275,9 @@ describe('Settings Mapper', () => {
             prChecksFailed: true,
             prBlocked: true,
             mergeReviewReady: true,
+            workflowStarted: true,
+            workflowCompleted: true,
+            workflowFailed: true,
           },
         },
       });
@@ -257,6 +305,9 @@ describe('Settings Mapper', () => {
             prChecksFailed: true,
             prBlocked: true,
             mergeReviewReady: true,
+            workflowStarted: true,
+            workflowCompleted: true,
+            workflowFailed: true,
           },
         },
       });
@@ -286,6 +337,9 @@ describe('Settings Mapper', () => {
             prChecksFailed: false,
             prBlocked: false,
             mergeReviewReady: false,
+            workflowStarted: false,
+            workflowCompleted: false,
+            workflowFailed: false,
           },
         },
       });
@@ -369,6 +423,9 @@ describe('Settings Mapper', () => {
             prChecksFailed: false,
             prBlocked: false,
             mergeReviewReady: false,
+            workflowStarted: false,
+            workflowCompleted: false,
+            workflowFailed: false,
           },
         },
       });
@@ -401,6 +458,9 @@ describe('Settings Mapper', () => {
           prChecksFailed: true,
           prBlocked: true,
           mergeReviewReady: true,
+          workflowStarted: true,
+          workflowCompleted: true,
+          workflowFailed: true,
         },
       });
     });
@@ -883,73 +943,129 @@ describe('Settings Mapper', () => {
     });
   });
 
-  describe('toDatabase() - defaultFastMode', () => {
-    it('should map workflow.defaultFastMode=true to default_fast_mode=1', () => {
+  describe('toDatabase() - defaultMode', () => {
+    it('should map workflow.defaultMode=Fast to default_mode=Fast', () => {
       const settings = createTestSettings({
         workflow: {
           ...createTestSettings().workflow,
-          defaultFastMode: true,
+          defaultMode: 'Fast',
         },
       });
       const row = toDatabase(settings);
-      expect(row.default_fast_mode).toBe(1);
+      expect(row.default_mode).toBe('Fast');
     });
 
-    it('should map workflow.defaultFastMode=false to default_fast_mode=0', () => {
+    it('should map workflow.defaultMode=Regular to default_mode=Regular', () => {
       const settings = createTestSettings({
         workflow: {
           ...createTestSettings().workflow,
-          defaultFastMode: false,
+          defaultMode: 'Regular',
         },
       });
       const row = toDatabase(settings);
-      expect(row.default_fast_mode).toBe(0);
+      expect(row.default_mode).toBe('Regular');
+    });
+
+    it('should map workflow.defaultMode=Exploration to default_mode=Exploration', () => {
+      const settings = createTestSettings({
+        workflow: {
+          ...createTestSettings().workflow,
+          defaultMode: 'Exploration',
+        },
+      });
+      const row = toDatabase(settings);
+      expect(row.default_mode).toBe('Exploration');
     });
   });
 
-  describe('fromDatabase() - defaultFastMode', () => {
-    it('should map default_fast_mode=1 to workflow.defaultFastMode=true', () => {
-      const row = createTestRow({ default_fast_mode: 1 });
+  describe('fromDatabase() - defaultMode', () => {
+    it('should map default_mode=Fast to workflow.defaultMode=Fast', () => {
+      const row = createTestRow({ default_mode: 'Fast' });
       const settings = fromDatabase(row);
-      expect(settings.workflow.defaultFastMode).toBe(true);
+      expect(settings.workflow.defaultMode).toBe('Fast');
     });
 
-    it('should map default_fast_mode=0 to workflow.defaultFastMode=false', () => {
-      const row = createTestRow({ default_fast_mode: 0 });
+    it('should map default_mode=Regular to workflow.defaultMode=Regular', () => {
+      const row = createTestRow({ default_mode: 'Regular' });
       const settings = fromDatabase(row);
-      expect(settings.workflow.defaultFastMode).toBe(false);
+      expect(settings.workflow.defaultMode).toBe('Regular');
     });
 
-    it('should default to true when column is null (migration backward compat)', () => {
-      const row = createTestRow({ default_fast_mode: undefined as any });
+    it('should default to Fast when column is null (migration backward compat)', () => {
+      const row = createTestRow({ default_mode: undefined as any });
       const settings = fromDatabase(row);
-      expect(settings.workflow.defaultFastMode).toBe(true);
+      expect(settings.workflow.defaultMode).toBe('Fast');
     });
   });
 
-  describe('round-trip - defaultFastMode', () => {
-    it('should preserve defaultFastMode=true through toDatabase → fromDatabase', () => {
+  describe('round-trip - defaultMode', () => {
+    it('should preserve defaultMode=Fast through toDatabase → fromDatabase', () => {
       const original = createTestSettings({
         workflow: {
           ...createTestSettings().workflow,
-          defaultFastMode: true,
+          defaultMode: 'Fast',
         },
       });
       const row = toDatabase(original);
       const restored = fromDatabase(row);
-      expect(restored.workflow.defaultFastMode).toBe(true);
+      expect(restored.workflow.defaultMode).toBe('Fast');
     });
 
-    it('should preserve defaultFastMode=false through toDatabase → fromDatabase', () => {
+    it('should preserve defaultMode=Regular through toDatabase → fromDatabase', () => {
       const original = createTestSettings({
         workflow: {
           ...createTestSettings().workflow,
-          defaultFastMode: false,
+          defaultMode: 'Regular',
         },
       });
       const row = toDatabase(original);
       const restored = fromDatabase(row);
-      expect(restored.workflow.defaultFastMode).toBe(false);
+      expect(restored.workflow.defaultMode).toBe('Regular');
+    });
+
+    it('should preserve defaultMode=Exploration through toDatabase → fromDatabase', () => {
+      const original = createTestSettings({
+        workflow: {
+          ...createTestSettings().workflow,
+          defaultMode: 'Exploration',
+        },
+      });
+      const row = toDatabase(original);
+      const restored = fromDatabase(row);
+      expect(restored.workflow.defaultMode).toBe('Exploration');
+    });
+  });
+
+  describe('toDatabase() - explorationMaxIterations', () => {
+    it('should map workflow.explorationMaxIterations=10 to exploration_max_iterations=10', () => {
+      const settings = createTestSettings({
+        workflow: {
+          ...createTestSettings().workflow,
+          explorationMaxIterations: 10,
+        },
+      });
+      const row = toDatabase(settings);
+      expect(row.exploration_max_iterations).toBe(10);
+    });
+
+    it('should map undefined explorationMaxIterations to null', () => {
+      const settings = createTestSettings();
+      const row = toDatabase(settings);
+      expect(row.exploration_max_iterations).toBeNull();
+    });
+  });
+
+  describe('fromDatabase() - explorationMaxIterations', () => {
+    it('should map exploration_max_iterations=10 to workflow.explorationMaxIterations=10', () => {
+      const row = createTestRow({ exploration_max_iterations: 10 });
+      const settings = fromDatabase(row);
+      expect(settings.workflow.explorationMaxIterations).toBe(10);
+    });
+
+    it('should omit explorationMaxIterations when column is null', () => {
+      const row = createTestRow({ exploration_max_iterations: null });
+      const settings = fromDatabase(row);
+      expect(settings.workflow.explorationMaxIterations).toBeUndefined();
     });
   });
 
@@ -1219,6 +1335,321 @@ describe('Settings Mapper', () => {
       const row = toDatabase(original);
       const restored = fromDatabase(row);
       expect(restored.workflow.skillInjection).toBeUndefined();
+    });
+  });
+
+  describe('toDatabase() - security config', () => {
+    it('should map security.mode to security_mode column', () => {
+      const settings = createTestSettings({
+        security: { mode: SecurityMode.Enforce },
+      } as any);
+      const row = toDatabase(settings);
+      expect(row.security_mode).toBe('Enforce');
+    });
+
+    it('should map security.lastEvaluationAt to security_last_evaluation_at column', () => {
+      const settings = createTestSettings({
+        security: {
+          mode: SecurityMode.Advisory,
+          lastEvaluationAt: '2026-04-05T10:00:00Z',
+        },
+      } as any);
+      const row = toDatabase(settings);
+      expect(row.security_last_evaluation_at).toBe('2026-04-05T10:00:00Z');
+    });
+
+    it('should map security.policySource to security_policy_source column', () => {
+      const settings = createTestSettings({
+        security: {
+          mode: SecurityMode.Enforce,
+          policySource: 'shep.security.yaml',
+        },
+      } as any);
+      const row = toDatabase(settings);
+      expect(row.security_policy_source).toBe('shep.security.yaml');
+    });
+
+    it('should default security_mode to Advisory when security is undefined', () => {
+      const settings = createTestSettings({ security: undefined } as any);
+      const row = toDatabase(settings);
+      expect(row.security_mode).toBe('Advisory');
+    });
+
+    it('should set nullable columns to null when optional fields are missing', () => {
+      const settings = createTestSettings({
+        security: { mode: SecurityMode.Advisory },
+      } as any);
+      const row = toDatabase(settings);
+      expect(row.security_last_evaluation_at).toBeNull();
+      expect(row.security_policy_source).toBeNull();
+    });
+  });
+
+  describe('fromDatabase() - security config', () => {
+    it('should reconstruct security.mode from security_mode column', () => {
+      const row = createTestRow({ security_mode: 'Enforce' });
+      const settings = fromDatabase(row);
+      expect(settings.security?.mode).toBe(SecurityMode.Enforce);
+    });
+
+    it('should reconstruct security.lastEvaluationAt from non-null column', () => {
+      const row = createTestRow({
+        security_mode: 'Advisory',
+        security_last_evaluation_at: '2026-04-05T10:00:00Z',
+      });
+      const settings = fromDatabase(row);
+      expect(settings.security?.lastEvaluationAt).toBe('2026-04-05T10:00:00Z');
+    });
+
+    it('should reconstruct security.policySource from non-null column', () => {
+      const row = createTestRow({
+        security_mode: 'Enforce',
+        security_policy_source: 'shep.security.yaml',
+      });
+      const settings = fromDatabase(row);
+      expect(settings.security?.policySource).toBe('shep.security.yaml');
+    });
+
+    it('should omit lastEvaluationAt when column is null', () => {
+      const row = createTestRow({
+        security_mode: 'Advisory',
+        security_last_evaluation_at: null,
+      });
+      const settings = fromDatabase(row);
+      expect(settings.security?.lastEvaluationAt).toBeUndefined();
+    });
+
+    it('should omit policySource when column is null', () => {
+      const row = createTestRow({
+        security_mode: 'Advisory',
+        security_policy_source: null,
+      });
+      const settings = fromDatabase(row);
+      expect(settings.security?.policySource).toBeUndefined();
+    });
+
+    it('should default mode to Advisory when security_mode is null', () => {
+      const row = createTestRow({ security_mode: undefined as any });
+      const settings = fromDatabase(row);
+      expect(settings.security?.mode).toBe(SecurityMode.Advisory);
+    });
+  });
+
+  describe('round-trip - security config', () => {
+    it('should preserve full security config through toDatabase → fromDatabase', () => {
+      const original = createTestSettings({
+        security: {
+          mode: SecurityMode.Enforce,
+          lastEvaluationAt: '2026-04-05T12:00:00Z',
+          policySource: 'shep.security.yaml',
+        },
+      } as any);
+      const row = toDatabase(original);
+      const restored = fromDatabase(row);
+      expect(restored.security?.mode).toBe(SecurityMode.Enforce);
+      expect(restored.security?.lastEvaluationAt).toBe('2026-04-05T12:00:00Z');
+      expect(restored.security?.policySource).toBe('shep.security.yaml');
+    });
+
+    it('should preserve minimal security config (mode only) through round-trip', () => {
+      const original = createTestSettings({
+        security: { mode: SecurityMode.Disabled },
+      } as any);
+      const row = toDatabase(original);
+      const restored = fromDatabase(row);
+      expect(restored.security?.mode).toBe(SecurityMode.Disabled);
+      expect(restored.security?.lastEvaluationAt).toBeUndefined();
+      expect(restored.security?.policySource).toBeUndefined();
+    });
+  });
+
+  describe('supplyChainSecurity feature flag (migration 056)', () => {
+    it('maps featureFlags.supplyChainSecurity=true to feature_flag_supply_chain_security=1', () => {
+      const settings = createTestSettings({
+        featureFlags: {
+          envDeploy: false,
+          debug: false,
+          reactFileManager: false,
+          projects: false,
+          codeReview: false,
+          collaboration: false,
+          bedrockIntegration: false,
+          whatsappDispatch: false,
+          aspm: false,
+          clusters: false,
+          supplyChainSecurity: true,
+          scheduledWorkflows: false,
+          githubImport: true,
+        },
+      });
+      const row = toDatabase(settings);
+      expect(row.feature_flag_supply_chain_security).toBe(1);
+    });
+
+    it('maps featureFlags.supplyChainSecurity=false to feature_flag_supply_chain_security=0', () => {
+      const settings = createTestSettings({
+        featureFlags: {
+          envDeploy: false,
+          debug: false,
+          reactFileManager: false,
+          projects: false,
+          codeReview: false,
+          collaboration: false,
+          bedrockIntegration: false,
+          whatsappDispatch: false,
+          aspm: false,
+          clusters: false,
+          supplyChainSecurity: false,
+          scheduledWorkflows: false,
+          githubImport: true,
+        },
+      });
+      const row = toDatabase(settings);
+      expect(row.feature_flag_supply_chain_security).toBe(0);
+    });
+
+    it('reconstructs supplyChainSecurity=true from feature_flag_supply_chain_security=1', () => {
+      const row = createTestRow({ feature_flag_supply_chain_security: 1 });
+      const settings = fromDatabase(row);
+      expect(settings.featureFlags?.supplyChainSecurity).toBe(true);
+    });
+
+    it('reconstructs supplyChainSecurity=false from feature_flag_supply_chain_security=0', () => {
+      const row = createTestRow({ feature_flag_supply_chain_security: 0 });
+      const settings = fromDatabase(row);
+      expect(settings.featureFlags?.supplyChainSecurity).toBe(false);
+    });
+
+    it('round-trips supplyChainSecurity through toDatabase → fromDatabase', () => {
+      const settings = createTestSettings({
+        featureFlags: {
+          envDeploy: true,
+          debug: true,
+          reactFileManager: true,
+          projects: true,
+          codeReview: true,
+          collaboration: true,
+          bedrockIntegration: true,
+          whatsappDispatch: true,
+          aspm: true,
+          clusters: true,
+          supplyChainSecurity: false,
+          scheduledWorkflows: false,
+          githubImport: true,
+        },
+      });
+      const row = toDatabase(settings);
+      const restored = fromDatabase(row);
+      expect(restored.featureFlags).toEqual(settings.featureFlags);
+    });
+  });
+
+  // Messaging remote control persistence (migration 056).
+  // Backward-compat requirement: a row written by an older build (all
+  // messaging_* columns at their default 0/null) must still decode to a
+  // valid MessagingConfig that consumer code can .?chain against.
+  describe('messaging remote control persistence', () => {
+    it('should default to disabled messaging config when row columns are unset', () => {
+      const row = createTestRow(); // defaults: all messaging_* at 0/null
+      const restored = fromDatabase(row);
+      expect(restored.messaging).toBeDefined();
+      expect(restored.messaging?.enabled).toBe(false);
+      expect(restored.messaging?.debounceMs).toBe(5000);
+      expect(restored.messaging?.chatBufferMs).toBe(3000);
+      expect(restored.messaging?.telegram).toBeUndefined();
+      expect(restored.messaging?.whatsapp).toBeUndefined();
+    });
+
+    it('should round-trip a fully configured Telegram pairing', () => {
+      const original = createTestSettings({
+        messaging: {
+          enabled: true,
+          gatewayUrl: 'http://localhost:8080',
+          deviceId: 'shep-dev-1',
+          gatewayClientId: 'commands-desktop-public',
+          debounceMs: 4000,
+          chatBufferMs: 2500,
+          telegram: {
+            enabled: true,
+            paired: true,
+            chatId: '123456',
+            routeId: 'rt_abc',
+            routeToken: 'tok_xyz',
+            publicUrl: 'http://localhost:8080/integrations/rt_abc/tok_xyz',
+            botToken: 'bot:secret',
+          },
+        },
+      });
+      const row = toDatabase(original);
+      expect(row.messaging_enabled).toBe(1);
+      expect(row.messaging_gateway_url).toBe('http://localhost:8080');
+      expect(row.messaging_telegram_paired).toBe(1);
+      expect(row.messaging_telegram_route_id).toBe('rt_abc');
+
+      const restored = fromDatabase(row);
+      expect(restored.messaging?.enabled).toBe(true);
+      expect(restored.messaging?.gatewayUrl).toBe('http://localhost:8080');
+      expect(restored.messaging?.deviceId).toBe('shep-dev-1');
+      expect(restored.messaging?.telegram?.paired).toBe(true);
+      expect(restored.messaging?.telegram?.chatId).toBe('123456');
+      expect(restored.messaging?.telegram?.routeId).toBe('rt_abc');
+      expect(restored.messaging?.telegram?.publicUrl).toBe(
+        'http://localhost:8080/integrations/rt_abc/tok_xyz'
+      );
+      expect(restored.messaging?.telegram?.botToken).toBe('bot:secret');
+      expect(restored.messaging?.whatsapp).toBeUndefined();
+    });
+
+    it('should preserve a pending pairing (no chatId, no paired) through round-trip', () => {
+      const original = createTestSettings({
+        messaging: {
+          enabled: true,
+          gatewayUrl: 'http://localhost:8080',
+          deviceId: 'shep-dev-1',
+          debounceMs: 5000,
+          chatBufferMs: 3000,
+          telegram: {
+            enabled: true,
+            paired: false,
+            pendingPairingCode: '482913',
+            pendingPairingExpiresAt: '2026-04-09T13:00:00.000Z',
+            routeId: 'rt_abc',
+            routeToken: 'tok_xyz',
+            publicUrl: 'http://localhost:8080/integrations/rt_abc/tok_xyz',
+          },
+        },
+      });
+      const row = toDatabase(original);
+      const restored = fromDatabase(row);
+      expect(restored.messaging?.telegram?.paired).toBe(false);
+      expect(restored.messaging?.telegram?.pendingPairingCode).toBe('482913');
+      expect(restored.messaging?.telegram?.pendingPairingExpiresAt).toBe(
+        '2026-04-09T13:00:00.000Z'
+      );
+      expect(restored.messaging?.telegram?.chatId).toBeUndefined();
+    });
+
+    it('should serialize a Date pendingPairingExpiresAt to ISO string', () => {
+      const expires = new Date('2026-04-09T13:00:00.000Z');
+      const row = toDatabase(
+        createTestSettings({
+          messaging: {
+            enabled: true,
+            gatewayUrl: 'http://localhost:8080',
+            deviceId: 'shep-dev-1',
+            debounceMs: 5000,
+            chatBufferMs: 3000,
+            telegram: {
+              enabled: true,
+              paired: false,
+              pendingPairingCode: '111111',
+              pendingPairingExpiresAt: expires,
+              routeId: 'rt_abc',
+            },
+          },
+        })
+      );
+      expect(row.messaging_telegram_pending_expires_at).toBe('2026-04-09T13:00:00.000Z');
     });
   });
 });

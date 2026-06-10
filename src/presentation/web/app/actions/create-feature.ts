@@ -3,6 +3,7 @@
 import { resolve } from '@/lib/server-container';
 import type { CreateFeatureUseCase } from '@shepai/core/application/use-cases/features/create/create-feature.use-case';
 import type { Feature } from '@shepai/core/domain/generated/output';
+import { type BuildMode } from '@shepai/core/domain/generated/output';
 import { composeUserInput } from './compose-user-input';
 
 interface Attachment {
@@ -30,8 +31,8 @@ interface CreateFeatureInput {
   push?: boolean;
   openPr?: boolean;
   parentId?: string;
-  /** When true, skip SDLC phases and implement directly from the prompt. */
-  fast?: boolean;
+  /** Execution mode: Regular (full SDLC), Fast (direct implementation), or Exploration (iterative prototyping). */
+  mode?: BuildMode;
   /** When true, create the feature in pending state (no agent spawned). */
   pending?: boolean;
   /** Fork repo and create PR to upstream at merge time. */
@@ -56,6 +57,8 @@ interface CreateFeatureInput {
    *  application's domain UUID. Persisted on the Feature so the canvas can
    *  render an app→feature parent edge. */
   applicationId?: string;
+  /** Per-feature plugin activation overrides (plugin name -> enabled/disabled). */
+  activePlugins?: Record<string, boolean>;
 }
 
 export async function createFeature(
@@ -70,7 +73,7 @@ export async function createFeature(
     push,
     openPr,
     parentId,
-    fast,
+    mode,
     pending,
     forkAndPr,
     commitSpecs,
@@ -82,6 +85,7 @@ export async function createFeature(
     rebaseBeforeBranch,
     injectSkills,
     applicationId,
+    activePlugins,
   } = input;
 
   if (!description?.trim()) {
@@ -111,7 +115,7 @@ export async function createFeature(
       openPr: openPr ?? false,
       ...(parentId ? { parentId } : {}),
       description,
-      ...(fast ? { fast } : {}),
+      ...(mode ? { mode } : {}),
       ...(pending ? { pending } : {}),
       ...(forkAndPr != null ? { forkAndPr } : {}),
       ...(commitSpecs != null ? { commitSpecs } : {}),
@@ -123,6 +127,7 @@ export async function createFeature(
       ...(rebaseBeforeBranch != null ? { rebaseBeforeBranch } : {}),
       ...(injectSkills != null ? { injectSkills } : {}),
       ...(applicationId ? { applicationId } : {}),
+      ...(activePlugins && Object.keys(activePlugins).length > 0 ? { activePlugins } : {}),
     });
 
     // Phase 2 (background): metadata generation, worktree, spec, agent spawn
@@ -137,7 +142,7 @@ export async function createFeature(
           push: push ?? false,
           openPr: openPr ?? false,
           ...(parentId ? { parentId } : {}),
-          ...(fast ? { fast } : {}),
+          ...(mode ? { mode } : {}),
           ...(pending ? { pending } : {}),
           ...(forkAndPr != null ? { forkAndPr } : {}),
           ...(commitSpecs != null ? { commitSpecs } : {}),
@@ -150,6 +155,7 @@ export async function createFeature(
           ...(rebaseBeforeBranch != null ? { rebaseBeforeBranch } : {}),
           ...(injectSkills != null ? { injectSkills } : {}),
           ...(applicationId ? { applicationId } : {}),
+          ...(activePlugins && Object.keys(activePlugins).length > 0 ? { activePlugins } : {}),
         },
         shouldSpawn
       )

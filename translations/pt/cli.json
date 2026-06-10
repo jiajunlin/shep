@@ -187,6 +187,27 @@
         "failedToList": "Erro ao listar ferramentas: {{error}}"
       }
     },
+    "security": {
+      "description": "Supply-chain security policy management",
+      "enforce": {
+        "description": "Evaluate repository security posture and enforce policy",
+        "repoOption": "Repository path (defaults to current directory)",
+        "outputOption": "Output format (table, json, yaml)",
+        "passed": "Security enforcement passed",
+        "failed": "Security enforcement failed",
+        "advisoryNote": "Mode is Advisory — findings are reported but do not block",
+        "disabledNote": "Security mode is Disabled — no checks performed",
+        "modeLabel": "Mode",
+        "sourceLabel": "Source",
+        "dependencyFindingsLabel": "Dependency Findings",
+        "releaseIntegrityLabel": "Release Integrity",
+        "totalFindingsLabel": "Total Findings",
+        "governanceFindingsLabel": "GitHub Governance (audit-only)",
+        "noFindings": "No findings",
+        "failedToEnforce": "Failed to evaluate security posture",
+        "flagDisabledNote": "Supply chain security feature flag is off — enforce is a no-op"
+      }
+    },
     "feat": {
       "description": "Gerenciar recursos através do ciclo de vida SDLC",
       "new": {
@@ -204,6 +225,8 @@
         "pendingOption": "Criar recurso sem iniciar o agente",
         "fastOption": "Pular fases do SDLC e implementar diretamente a partir do seu prompt (padrão: ativado)",
         "noFastOption": "Executar todas as fases do SDLC (analisar → requisitos → plano → implementar)",
+        "exploreOption": "Start an exploration/prototyping session for iterative design",
+        "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
         "modelOption": "Identificador do modelo LLM para esta execução (ex: claude-opus-4-6)",
         "noRebaseOption": "Skip syncing main from remote before creating the feature branch",
         "injectSkillsOption": "Inject curated skills into the worktree",
@@ -245,7 +268,7 @@
         "featuresHeading": "Recursos ({{count}})",
         "nameHeader": "NOME",
         "statusHeader": "STATUS",
-        "gatesHeader": "R P M \u2191",
+        "gatesHeader": "R P M ↑",
         "elapsedHeader": "TEMPO",
         "doneHeader": "FEITO",
         "failedToList": "Falha ao listar recursos"
@@ -419,6 +442,28 @@
         "restoredLabel": "Restaurado:",
         "failedToUnarchive": "Falha ao desarquivar recurso"
       },
+      "feedback": {
+        "description": "Send feedback on an exploration prototype to iterate",
+        "idArgument": "Feature ID or prefix",
+        "feedbackArgument": "Feedback text for the next iteration",
+        "feedbackSubmitted": "Feedback submitted for: {{name}}",
+        "iterationLabel": "Iteration:",
+        "agentLabel": "Agent:",
+        "agentIterating": "iterating on feedback",
+        "notExploration": "Feature \"{{name}}\" is not in exploration mode (mode: {{mode}}, lifecycle: {{lifecycle}})",
+        "failedToSubmit": "Failed to submit feedback"
+      },
+      "promote": {
+        "description": "Promote an exploration feature to Regular or Fast mode",
+        "idArgument": "Feature ID or prefix",
+        "fastOption": "Promote to Fast mode (skip SDLC phases)",
+        "promoted": "Exploration promoted: {{name}}",
+        "modeLabel": "Mode:",
+        "statusLabel": "Status:",
+        "agentLabel": "Agent:",
+        "agentSpawned": "spawned for {{mode}} mode",
+        "failedToPromote": "Failed to promote exploration"
+      },
       "resolveWaiting": {
         "featureNotFound": "Recurso não encontrado: \"{{id}}\"",
         "noAgentRun": "Recurso \"{{name}}\" não tem execução de agente",
@@ -539,6 +584,107 @@
       "resolve": {
         "multipleMatch": "Multiple applications match prefix \"{{id}}\": {{matches}}",
         "notFound": "Application not found: {{id}}"
+      }
+    },
+    "cluster": {
+      "description": "Gerenciar clusters",
+      "new": {
+        "description": "Criar um novo cluster",
+        "nameArgument": "Nome do cluster",
+        "argocdOption": "Habilitar ArgoCD para entrega contínua com GitOps",
+        "provisionOption": "Iniciar provisionamento imediatamente após a criação",
+        "spinnerText": "Criando cluster",
+        "clusterCreated": "Cluster criado",
+        "idLabel": "ID:",
+        "nameLabel": "Nome:",
+        "slugLabel": "Slug:",
+        "statusLabel": "Status:",
+        "argocdLabel": "ArgoCD:",
+        "provisioningStarted": "Provisionamento iniciado",
+        "failedToCreate": "Falha ao criar cluster"
+      },
+      "ls": {
+        "description": "Listar clusters",
+        "title": "Clusters",
+        "idColumn": "ID",
+        "nameColumn": "Nome",
+        "statusColumn": "Status",
+        "argocdColumn": "ArgoCD",
+        "reposColumn": "Repos",
+        "appsColumn": "Apps",
+        "noClusters": "Nenhum cluster encontrado",
+        "failedToList": "Falha ao listar clusters"
+      },
+      "show": {
+        "description": "Exibir detalhes de um cluster",
+        "idArgument": "ID do cluster, slug ou prefixo",
+        "title": "Cluster: {{name}}",
+        "nameLabel": "Nome",
+        "slugLabel": "Slug",
+        "statusLabel": "Status",
+        "descriptionLabel": "Descrição",
+        "argocdLabel": "ArgoCD",
+        "argocdNamespaceLabel": "Namespace do ArgoCD",
+        "kubeconfigLabel": "Kubeconfig",
+        "k3dNameLabel": "Nome k3d",
+        "nodeCountLabel": "Quantidade de nós",
+        "errorLabel": "Erro",
+        "configTitle": "Configuração",
+        "timestampsTitle": "Registros de tempo",
+        "createdLabel": "Criado",
+        "updatedLabel": "Atualizado",
+        "provisionedLabel": "Último provisionamento",
+        "healthCheckLabel": "Última verificação de saúde",
+        "linkedTitle": "Entidades vinculadas",
+        "reposLabel": "Repositórios",
+        "appsLabel": "Aplicações",
+        "failedToShow": "Falha ao exibir cluster"
+      },
+      "del": {
+        "description": "Excluir um cluster",
+        "idArgument": "ID do cluster, slug ou prefixo",
+        "forceOption": "Pular confirmação",
+        "confirmDelete": "Excluir cluster \"{{name}}\"? Será destruído se estiver em execução.",
+        "cancelled": "Cancelado",
+        "clusterDeleted": "Cluster excluído",
+        "nameLabel": "Nome:",
+        "slugLabel": "Slug:",
+        "failedToDelete": "Falha ao excluir cluster"
+      },
+      "link": {
+        "description": "Vincular um repositório ou aplicação a um cluster",
+        "clusterArgument": "ID do cluster, slug ou prefixo",
+        "entityArgument": "ID do repositório ou aplicação",
+        "linked": "Vinculado ao cluster",
+        "clusterLabel": "Cluster:",
+        "entityLabel": "Entidade:",
+        "failedToLink": "Falha ao vincular entidade ao cluster"
+      },
+      "unlink": {
+        "description": "Desvincular um repositório ou aplicação de um cluster",
+        "clusterArgument": "ID do cluster, slug ou prefixo",
+        "entityArgument": "ID do repositório ou aplicação",
+        "unlinked": "Desvinculado do cluster",
+        "clusterLabel": "Cluster:",
+        "entityLabel": "Entidade:",
+        "failedToUnlink": "Falha ao desvincular entidade do cluster"
+      },
+      "status": {
+        "description": "Exibir status ao vivo do cluster",
+        "idArgument": "ID do cluster, slug ou prefixo",
+        "title": "Status do cluster: {{name}}",
+        "statusLabel": "Status",
+        "podCountLabel": "Pods",
+        "serviceCountLabel": "Serviços",
+        "argocdLabel": "ArgoCD",
+        "notReady": "O cluster não está no estado Pronto",
+        "podsTitle": "Pods",
+        "servicesTitle": "Serviços",
+        "failedToGetStatus": "Falha ao obter status do cluster"
+      },
+      "resolve": {
+        "multipleMatch": "Vários clusters correspondem ao prefixo \"{{id}}\": {{matches}}",
+        "notFound": "Cluster não encontrado: {{id}}"
       }
     },
     "agent": {
@@ -704,6 +850,88 @@
         "description": "Post a completed review to GitHub",
         "idArgument": "Review ID (or prefix)",
         "failedToPost": "Failed to post review to GitHub"
+      }
+    },
+    "plugin": {
+      "description": "Manage AI tool plugins",
+      "add": {
+        "description": "Install a plugin from catalog or custom configuration",
+        "nameArg": "Plugin name from the curated catalog",
+        "typeOption": "Plugin type for custom install (mcp, hook, cli)",
+        "commandOption": "MCP server command for custom install",
+        "transportOption": "MCP transport protocol (stdio, http)",
+        "nameOption": "Plugin name for custom install",
+        "success": "Plugin \"{{name}}\" installed successfully",
+        "failed": "Failed to install plugin",
+        "customRequiresName": "Custom plugin install requires --name",
+        "customRequiresType": "Custom plugin install requires --type (mcp, hook, cli)",
+        "invalidType": "Invalid plugin type \"{{type}}\". Must be one of: mcp, hook, cli"
+      },
+      "remove": {
+        "description": "Remove an installed plugin",
+        "nameArg": "Name of the plugin to remove",
+        "success": "Plugin \"{{name}}\" removed",
+        "failed": "Failed to remove plugin"
+      },
+      "list": {
+        "description": "List all installed plugins",
+        "title": "Installed Plugins",
+        "nameColumn": "Name",
+        "typeColumn": "Type",
+        "statusColumn": "Status",
+        "healthColumn": "Health",
+        "sourceColumn": "Source",
+        "noPlugins": "No plugins installed. Run 'shep plugin catalog' to browse available plugins.",
+        "failed": "Failed to list plugins"
+      },
+      "enable": {
+        "description": "Enable a plugin globally",
+        "nameArg": "Name of the plugin to enable",
+        "success": "Plugin \"{{name}}\" enabled",
+        "failed": "Failed to enable plugin"
+      },
+      "disable": {
+        "description": "Disable a plugin globally",
+        "nameArg": "Name of the plugin to disable",
+        "success": "Plugin \"{{name}}\" disabled",
+        "failed": "Failed to disable plugin"
+      },
+      "configure": {
+        "description": "Configure plugin settings",
+        "nameArg": "Name of the plugin to configure",
+        "toolGroupsOption": "Comma-separated list of tool groups to enable",
+        "success": "Plugin \"{{name}}\" configured",
+        "noOptions": "No configuration options provided. Use --tool-groups to set active tool groups.",
+        "failed": "Failed to configure plugin"
+      },
+      "status": {
+        "description": "Show detailed health status of a plugin",
+        "nameArg": "Name of the plugin to check (omit for all)",
+        "title": "Plugin Health Status",
+        "allTitle": "Plugin Health Check",
+        "nameLabel": "Name",
+        "typeLabel": "Type",
+        "healthLabel": "Health",
+        "messageLabel": "Details",
+        "enabledLabel": "Enabled",
+        "runtimeLabel": "Runtime",
+        "transportLabel": "Transport",
+        "envVarsLabel": "Required Env Vars",
+        "toolGroupsLabel": "Tool Groups",
+        "activeGroupsLabel": "Active Groups",
+        "noPlugins": "No plugins installed.",
+        "failed": "Failed to check plugin health"
+      },
+      "catalog": {
+        "description": "Browse available plugins from the curated catalog",
+        "title": "Plugin Catalog",
+        "nameColumn": "Name",
+        "typeColumn": "Type",
+        "descriptionColumn": "Description",
+        "statusColumn": "Status",
+        "installed": "Installed",
+        "available": "Available",
+        "failed": "Failed to load plugin catalog"
       }
     }
   },

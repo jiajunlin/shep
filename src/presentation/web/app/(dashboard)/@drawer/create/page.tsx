@@ -2,6 +2,7 @@ import { resolve } from '@/lib/server-container';
 import type { ListFeaturesUseCase } from '@shepai/core/application/use-cases/features/list-features.use-case';
 import type { ListRepositoriesUseCase } from '@shepai/core/application/use-cases/repositories/list-repositories.use-case';
 import type { GetApplicationUseCase } from '@shepai/core/application/use-cases/applications/get-application.use-case';
+import type { ListPluginsUseCase } from '@shepai/core/application/use-cases/plugins/list-plugins.use-case';
 import { getSettings } from '@shepai/core/infrastructure/services/settings.service';
 import { getWorkflowDefaults } from '@/app/actions/get-workflow-defaults';
 import { getViewerPermission } from '@/app/actions/get-viewer-permission';
@@ -40,6 +41,7 @@ export default async function CreateDrawerPage({ searchParams }: CreateDrawerPag
 
   const listFeatures = resolve<ListFeaturesUseCase>('ListFeaturesUseCase');
   const listRepos = resolve<ListRepositoriesUseCase>('ListRepositoriesUseCase');
+  const listPlugins = resolve<ListPluginsUseCase>('ListPluginsUseCase');
   const settings = getSettings();
 
   // When an applicationId is supplied, look up the Application server-side so
@@ -52,15 +54,17 @@ export default async function CreateDrawerPage({ searchParams }: CreateDrawerPag
         .catch(() => null)
     : Promise.resolve(null);
 
-  const [features, repositories, workflowDefaults, viewerPerm, application] = await Promise.all([
-    listFeatures.execute(),
-    listRepos.execute().catch(() => []),
-    getWorkflowDefaults().catch(() => undefined),
-    repo
-      ? getViewerPermission(repo).catch(() => ({ canPushDirectly: false }))
-      : Promise.resolve({ canPushDirectly: false }),
-    applicationPromise,
-  ]);
+  const [features, repositories, workflowDefaults, viewerPerm, application, plugins] =
+    await Promise.all([
+      listFeatures.execute(),
+      listRepos.execute().catch(() => []),
+      getWorkflowDefaults().catch(() => undefined),
+      repo
+        ? getViewerPermission(repo).catch(() => ({ canPushDirectly: false }))
+        : Promise.resolve({ canPushDirectly: false }),
+      applicationPromise,
+      listPlugins.execute().catch(() => []),
+    ]);
 
   const featureOptions = features
     .map((f) => ({ id: f.id, name: f.name }))
@@ -70,6 +74,8 @@ export default async function CreateDrawerPage({ searchParams }: CreateDrawerPag
     id: r.id,
     name: r.name,
     path: r.path,
+    isFork: r.isFork,
+    upstreamUrl: r.upstreamUrl,
   }));
 
   // Application-scoped overrides: the entry-point-determined fields are
@@ -79,6 +85,12 @@ export default async function CreateDrawerPage({ searchParams }: CreateDrawerPag
   // repository path (e.g., DI not yet warm in tests).
   const scopedRepositoryPath = application?.repositoryPath ?? repo ?? '';
   const scopedApplicationId = application?.id ?? applicationId;
+
+  const installedPlugins = plugins.map((p) => ({
+    name: p.name,
+    displayName: p.displayName ?? p.name,
+    enabled: p.enabled,
+  }));
 
   return (
     <CreateDrawerClient
@@ -93,6 +105,7 @@ export default async function CreateDrawerPage({ searchParams }: CreateDrawerPag
       currentAgentType={settings.agent.type}
       currentModel={settings.models.default}
       canPushDirectly={viewerPerm.canPushDirectly}
+      installedPlugins={installedPlugins}
     />
   );
 }

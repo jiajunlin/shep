@@ -15,6 +15,8 @@ import type {
   Settings,
   SkillInjectionConfig,
   SkillSource,
+  MessagingConfig,
+  MessagingPlatformConfig,
 } from '../../../../domain/generated/output.js';
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
 import {
@@ -22,6 +24,7 @@ import {
   type AgentAuthMethod,
   type EditorType,
   type Language,
+  type SecurityMode,
   type TerminalType,
   type DefaultHomePage,
   type WhatsAppConfig,
@@ -82,6 +85,9 @@ export interface SettingsRow {
   notif_evt_pr_checks_failed: number;
   notif_evt_pr_blocked: number;
   notif_evt_merge_review_ready: number;
+  notif_evt_workflow_started: number;
+  notif_evt_workflow_completed: number;
+  notif_evt_workflow_failed: number;
 
   // WorkflowConfig (workflow.*)
   workflow_open_pr_on_impl_complete: number;
@@ -117,7 +123,7 @@ export interface SettingsRow {
   workflow_enable_evidence: number;
   workflow_commit_evidence: number;
   hide_ci_status: number;
-  default_fast_mode: number;
+  default_mode: string;
 
   // FeatureFlags (featureFlags.*)
   feature_flag_env_deploy: number;
@@ -129,6 +135,10 @@ export interface SettingsRow {
   feature_flag_bedrock_integration: number;
   feature_flag_whatsapp_dispatch: number;
   feature_flag_aspm: number;
+  feature_flag_clusters: number;
+  feature_flag_supply_chain_security: number;
+  feature_flag_scheduled_workflows: number;
+  feature_flag_github_import?: number;
   // Interactive agent config (added in migration 046)
   interactive_agent_enabled: number;
   interactive_agent_auto_timeout_minutes: number;
@@ -139,6 +149,9 @@ export interface SettingsRow {
 
   // FAB layout config (added in migration 050)
   fab_position_swapped: number;
+
+  // Exploration max iterations (added in migration 053)
+  exploration_max_iterations: number | null;
 
   // Skill injection config (added in migration 051)
   skill_injection_enabled: number;
@@ -157,6 +170,39 @@ export interface SettingsRow {
   whatsapp_cloud_api_access_token: string | null;
   whatsapp_cloud_api_verify_token: string | null;
   whatsapp_cloud_api_app_secret: string | null;
+
+  // SecurityConfig (added in migration 120, spec 083)
+  security_mode: string;
+  security_last_evaluation_at: string | null;
+  security_policy_source: string | null;
+
+  // Messaging remote control config (added in migration 056)
+  messaging_enabled: number;
+  messaging_gateway_url: string | null;
+  messaging_device_id: string | null;
+  messaging_gateway_client_id: string | null;
+  messaging_debounce_ms: number | null;
+  messaging_chat_buffer_ms: number | null;
+
+  messaging_telegram_enabled: number;
+  messaging_telegram_paired: number;
+  messaging_telegram_chat_id: string | null;
+  messaging_telegram_route_id: string | null;
+  messaging_telegram_route_token: string | null;
+  messaging_telegram_public_url: string | null;
+  messaging_telegram_bot_token: string | null;
+  messaging_telegram_pending_code: string | null;
+  messaging_telegram_pending_expires_at: string | null;
+
+  messaging_whatsapp_enabled: number;
+  messaging_whatsapp_paired: number;
+  messaging_whatsapp_chat_id: string | null;
+  messaging_whatsapp_route_id: string | null;
+  messaging_whatsapp_route_token: string | null;
+  messaging_whatsapp_public_url: string | null;
+  messaging_whatsapp_bot_token: string | null;
+  messaging_whatsapp_pending_code: string | null;
+  messaging_whatsapp_pending_expires_at: string | null;
 }
 
 /**
@@ -217,6 +263,9 @@ export function toDatabase(settings: Settings): SettingsRow {
     notif_evt_pr_checks_failed: settings.notifications.events.prChecksFailed ? 1 : 0,
     notif_evt_pr_blocked: settings.notifications.events.prBlocked ? 1 : 0,
     notif_evt_merge_review_ready: settings.notifications.events.mergeReviewReady ? 1 : 0,
+    notif_evt_workflow_started: settings.notifications.events.workflowStarted ? 1 : 0,
+    notif_evt_workflow_completed: settings.notifications.events.workflowCompleted ? 1 : 0,
+    notif_evt_workflow_failed: settings.notifications.events.workflowFailed ? 1 : 0,
 
     // WorkflowConfig (boolean → INTEGER)
     workflow_open_pr_on_impl_complete: settings.workflow.openPrOnImplementationComplete ? 1 : 0,
@@ -243,7 +292,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     workflow_enable_evidence: settings.workflow.enableEvidence ? 1 : 0,
     workflow_commit_evidence: settings.workflow.commitEvidence ? 1 : 0,
     hide_ci_status: settings.workflow.hideCiStatus !== false ? 1 : 0,
-    default_fast_mode: settings.workflow.defaultFastMode !== false ? 1 : 0,
+    default_mode: settings.workflow.defaultMode ?? 'Fast',
 
     // Onboarding (boolean → INTEGER)
     onboarding_complete: settings.onboardingComplete ? 1 : 0,
@@ -267,6 +316,10 @@ export function toDatabase(settings: Settings): SettingsRow {
     feature_flag_bedrock_integration: settings.featureFlags?.bedrockIntegration ? 1 : 0,
     feature_flag_whatsapp_dispatch: settings.featureFlags?.whatsappDispatch ? 1 : 0,
     feature_flag_aspm: settings.featureFlags?.aspm ? 1 : 0,
+    feature_flag_clusters: settings.featureFlags?.clusters ? 1 : 0,
+    feature_flag_supply_chain_security: settings.featureFlags?.supplyChainSecurity ? 1 : 0,
+    feature_flag_scheduled_workflows: settings.featureFlags?.scheduledWorkflows ? 1 : 0,
+    feature_flag_github_import: settings.featureFlags?.githubImport !== false ? 1 : 0,
 
     // InteractiveAgentConfig (boolean → 0/1, integer fields; defaults applied here)
     interactive_agent_enabled: (settings.interactiveAgent?.enabled ?? true) ? 1 : 0,
@@ -279,6 +332,9 @@ export function toDatabase(settings: Settings): SettingsRow {
 
     // FAB layout config (default: not swapped)
     fab_position_swapped: (settings.fabLayout?.swapPosition ?? false) ? 1 : 0,
+
+    // Exploration max iterations (default: 10)
+    exploration_max_iterations: settings.workflow.explorationMaxIterations ?? null,
 
     // Skill injection config (default: disabled, no skills)
     skill_injection_enabled: settings.workflow.skillInjection?.enabled ? 1 : 0,
@@ -301,6 +357,14 @@ export function toDatabase(settings: Settings): SettingsRow {
     whatsapp_cloud_api_access_token: settings.whatsapp?.cloudApiAccessToken ?? null,
     whatsapp_cloud_api_verify_token: settings.whatsapp?.cloudApiVerifyToken ?? null,
     whatsapp_cloud_api_app_secret: settings.whatsapp?.cloudApiAppSecret ?? null,
+
+    // SecurityConfig (default: Advisory mode, no evaluation yet)
+    security_mode: settings.security?.mode ?? 'Advisory',
+    security_last_evaluation_at: settings.security?.lastEvaluationAt ?? null,
+    security_policy_source: settings.security?.policySource ?? null,
+
+    // Messaging remote control (migration 056)
+    ...messagingToRow(settings.messaging),
   };
 }
 
@@ -338,6 +402,83 @@ function buildWhatsAppFromRow(row: SettingsRow): WhatsAppConfig {
       cloudApiAppSecret: row.whatsapp_cloud_api_app_secret,
     }),
   };
+}
+
+/**
+ * Serialize MessagingConfig into the snake_case DB row columns.
+ * An undefined config writes zeros/nulls so the row is valid.
+ */
+function messagingToRow(
+  messaging: MessagingConfig | undefined
+): Pick<
+  SettingsRow,
+  | 'messaging_enabled'
+  | 'messaging_gateway_url'
+  | 'messaging_device_id'
+  | 'messaging_gateway_client_id'
+  | 'messaging_debounce_ms'
+  | 'messaging_chat_buffer_ms'
+  | 'messaging_telegram_enabled'
+  | 'messaging_telegram_paired'
+  | 'messaging_telegram_chat_id'
+  | 'messaging_telegram_route_id'
+  | 'messaging_telegram_route_token'
+  | 'messaging_telegram_public_url'
+  | 'messaging_telegram_bot_token'
+  | 'messaging_telegram_pending_code'
+  | 'messaging_telegram_pending_expires_at'
+  | 'messaging_whatsapp_enabled'
+  | 'messaging_whatsapp_paired'
+  | 'messaging_whatsapp_chat_id'
+  | 'messaging_whatsapp_route_id'
+  | 'messaging_whatsapp_route_token'
+  | 'messaging_whatsapp_public_url'
+  | 'messaging_whatsapp_bot_token'
+  | 'messaging_whatsapp_pending_code'
+  | 'messaging_whatsapp_pending_expires_at'
+> {
+  const tg = messaging?.telegram;
+  const wa = messaging?.whatsapp;
+  return {
+    messaging_enabled: messaging?.enabled ? 1 : 0,
+    messaging_gateway_url: messaging?.gatewayUrl ?? null,
+    messaging_device_id: messaging?.deviceId ?? null,
+    messaging_gateway_client_id: messaging?.gatewayClientId ?? null,
+    messaging_debounce_ms: messaging?.debounceMs ?? null,
+    messaging_chat_buffer_ms: messaging?.chatBufferMs ?? null,
+
+    messaging_telegram_enabled: tg?.enabled ? 1 : 0,
+    messaging_telegram_paired: tg?.paired ? 1 : 0,
+    messaging_telegram_chat_id: tg?.chatId ?? null,
+    messaging_telegram_route_id: tg?.routeId ?? null,
+    messaging_telegram_route_token: tg?.routeToken ?? null,
+    messaging_telegram_public_url: tg?.publicUrl ?? null,
+    messaging_telegram_bot_token: tg?.botToken ?? null,
+    messaging_telegram_pending_code: tg?.pendingPairingCode ?? null,
+    messaging_telegram_pending_expires_at: serializeIsoLike(tg?.pendingPairingExpiresAt),
+
+    messaging_whatsapp_enabled: wa?.enabled ? 1 : 0,
+    messaging_whatsapp_paired: wa?.paired ? 1 : 0,
+    messaging_whatsapp_chat_id: wa?.chatId ?? null,
+    messaging_whatsapp_route_id: wa?.routeId ?? null,
+    messaging_whatsapp_route_token: wa?.routeToken ?? null,
+    messaging_whatsapp_public_url: wa?.publicUrl ?? null,
+    messaging_whatsapp_bot_token: wa?.botToken ?? null,
+    messaging_whatsapp_pending_code: wa?.pendingPairingCode ?? null,
+    messaging_whatsapp_pending_expires_at: serializeIsoLike(wa?.pendingPairingExpiresAt),
+  };
+}
+
+/**
+ * The generated TypeSpec type for `pendingPairingExpiresAt` is `any` because
+ * TypeSpec emitted a loose shape for this `utcDateTime` field. Callers pass
+ * either a Date or an ISO string; we normalize both to a string for storage.
+ */
+function serializeIsoLike(value: unknown): string | null {
+  if (value == null) return null;
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'string') return value;
+  return String(value);
 }
 
 /**
@@ -467,6 +608,9 @@ export function fromDatabase(row: SettingsRow): Settings {
         prChecksFailed: row.notif_evt_pr_checks_failed === 1,
         prBlocked: row.notif_evt_pr_blocked === 1,
         mergeReviewReady: row.notif_evt_merge_review_ready === 1,
+        workflowStarted: row.notif_evt_workflow_started === 1,
+        workflowCompleted: row.notif_evt_workflow_completed === 1,
+        workflowFailed: row.notif_evt_workflow_failed === 1,
       },
     },
 
@@ -489,7 +633,10 @@ export function fromDatabase(row: SettingsRow): Settings {
       enableEvidence: row.workflow_enable_evidence === 1,
       commitEvidence: row.workflow_commit_evidence === 1,
       hideCiStatus: row.hide_ci_status === 1,
-      defaultFastMode: (row.default_fast_mode ?? 1) !== 0,
+      defaultMode: row.default_mode ?? 'Fast',
+      ...(row.exploration_max_iterations !== null && {
+        explorationMaxIterations: row.exploration_max_iterations,
+      }),
       autoArchiveDelayMinutes: row.auto_archive_delay_minutes ?? 10,
     },
 
@@ -504,6 +651,12 @@ export function fromDatabase(row: SettingsRow): Settings {
       bedrockIntegration: row.feature_flag_bedrock_integration === 1,
       whatsappDispatch: row.feature_flag_whatsapp_dispatch === 1,
       aspm: row.feature_flag_aspm === 1,
+      clusters: row.feature_flag_clusters === 1,
+      // Default true when column is missing/null (pre-migration upgrades)
+      supplyChainSecurity: (row.feature_flag_supply_chain_security ?? 1) !== 0,
+      scheduledWorkflows: row.feature_flag_scheduled_workflows === 1,
+      // Default true when column is missing/null (pre-migration upgrades)
+      githubImport: (row.feature_flag_github_import ?? 1) !== 0,
     },
 
     // InteractiveAgentConfig (INTEGER 0/1 → boolean, integer → number)
@@ -524,7 +677,111 @@ export function fromDatabase(row: SettingsRow): Settings {
     // WhatsApp integration config (spec 101)
     whatsapp: buildWhatsAppFromRow(row),
 
+    // SecurityConfig (TEXT → string, nullable TEXT → optional string)
+    security: {
+      mode: (row.security_mode ?? 'Advisory') as SecurityMode,
+      ...(row.security_last_evaluation_at !== null && {
+        lastEvaluationAt: row.security_last_evaluation_at,
+      }),
+      ...(row.security_policy_source !== null && {
+        policySource: row.security_policy_source,
+      }),
+    },
+
+    // Messaging remote control (migration 056)
+    // Always present — even for rows written before the migration, defaults
+    // decode to { enabled: false, debounceMs: 5000, chatBufferMs: 3000 } so
+    // consumers always see a valid MessagingConfig shape.
+    messaging: messagingFromRow(row),
+
     // Onboarding (INTEGER → boolean)
     onboardingComplete: row.onboarding_complete === 1,
   };
+}
+
+/**
+ * Deserialize MessagingConfig from the DB row. Returns a fully populated
+ * MessagingConfig with safe defaults for rows that predate migration 056 or
+ * were written by code that never set the messaging field (e.g. main branch).
+ */
+function messagingFromRow(row: SettingsRow): MessagingConfig {
+  const telegram = readPlatform(
+    row.messaging_telegram_enabled,
+    row.messaging_telegram_paired,
+    row.messaging_telegram_chat_id,
+    row.messaging_telegram_route_id,
+    row.messaging_telegram_route_token,
+    row.messaging_telegram_public_url,
+    row.messaging_telegram_bot_token,
+    row.messaging_telegram_pending_code,
+    row.messaging_telegram_pending_expires_at
+  );
+  const whatsapp = readPlatform(
+    row.messaging_whatsapp_enabled,
+    row.messaging_whatsapp_paired,
+    row.messaging_whatsapp_chat_id,
+    row.messaging_whatsapp_route_id,
+    row.messaging_whatsapp_route_token,
+    row.messaging_whatsapp_public_url,
+    row.messaging_whatsapp_bot_token,
+    row.messaging_whatsapp_pending_code,
+    row.messaging_whatsapp_pending_expires_at
+  );
+
+  const config: MessagingConfig = {
+    enabled: (row.messaging_enabled ?? 0) === 1,
+    debounceMs: row.messaging_debounce_ms ?? 5000,
+    chatBufferMs: row.messaging_chat_buffer_ms ?? 3000,
+  };
+  if (row.messaging_gateway_url !== null && row.messaging_gateway_url !== undefined) {
+    config.gatewayUrl = row.messaging_gateway_url;
+  }
+  if (row.messaging_device_id !== null && row.messaging_device_id !== undefined) {
+    config.deviceId = row.messaging_device_id;
+  }
+  if (row.messaging_gateway_client_id !== null && row.messaging_gateway_client_id !== undefined) {
+    config.gatewayClientId = row.messaging_gateway_client_id;
+  }
+  if (telegram) config.telegram = telegram;
+  if (whatsapp) config.whatsapp = whatsapp;
+  return config;
+}
+
+function readPlatform(
+  enabled: number | null | undefined,
+  paired: number | null | undefined,
+  chatId: string | null,
+  routeId: string | null,
+  routeToken: string | null,
+  publicUrl: string | null,
+  botToken: string | null,
+  pendingCode: string | null,
+  pendingExpiresAt: string | null
+): MessagingPlatformConfig | undefined {
+  // Omit the platform entirely when no data has been written. This matches
+  // the pre-persistence shape where callers used `config.telegram?.paired`.
+  const hasAny =
+    (enabled ?? 0) === 1 ||
+    (paired ?? 0) === 1 ||
+    chatId !== null ||
+    routeId !== null ||
+    routeToken !== null ||
+    publicUrl !== null ||
+    botToken !== null ||
+    pendingCode !== null ||
+    pendingExpiresAt !== null;
+  if (!hasAny) return undefined;
+
+  const platform: MessagingPlatformConfig = {
+    enabled: (enabled ?? 0) === 1,
+    paired: (paired ?? 0) === 1,
+  };
+  if (chatId !== null) platform.chatId = chatId;
+  if (routeId !== null) platform.routeId = routeId;
+  if (routeToken !== null) platform.routeToken = routeToken;
+  if (publicUrl !== null) platform.publicUrl = publicUrl;
+  if (botToken !== null) platform.botToken = botToken;
+  if (pendingCode !== null) platform.pendingPairingCode = pendingCode;
+  if (pendingExpiresAt !== null) platform.pendingPairingExpiresAt = pendingExpiresAt;
+  return platform;
 }

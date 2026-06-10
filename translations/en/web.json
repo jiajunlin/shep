@@ -17,7 +17,9 @@
       "homePage": "Home page",
       "layout": "Layout",
       "database": "Database",
-      "integrations": "Integrations"
+      "integrations": "Integrations",
+      "security": "Security",
+      "messaging": "Messaging"
     },
     "language": {
       "title": "Language",
@@ -70,8 +72,11 @@
       "title": "Workflow",
       "description": "Configure PR behavior, approval gates, and CI settings",
       "sectionDescription": "Automation behavior after implementation",
-      "defaultFastMode": "Fast mode by default",
-      "defaultFastModeDescription": "Skip SDLC phases and implement directly from prompt",
+      "defaultMode": "Default feature mode",
+      "defaultModeDescription": "Default mode for new features created via CLI or Web UI",
+      "modeRegular": "Regular",
+      "modeFast": "Fast",
+      "modeExploration": "Exploration",
       "subsections": {
         "approve": "Approve",
         "evidence": "Evidence",
@@ -208,6 +213,8 @@
       "bedrockIntegrationDescription": "Enable project-bedrock memory integration (markdown project memory for AI coding agents) — surfaces toggles, drawers, and tabs across applications, repositories, and features. Requires Python 3.9+ and pipx.",
       "whatsappDispatch": "WhatsApp Task Dispatch",
       "whatsappDispatchDescription": "Dispatch and steer shep agents from WhatsApp — create features, receive agent updates, and approve gates by replying in a chat thread (spec 101).",
+      "clusters": "Clusters",
+      "clustersDescription": "Enable Clusters navigation and Kubernetes cluster management in the web UI",
       "hint": "Experimental features that are still under development. Enable at your own risk — they may change or be removed in future versions. Debug mode adds verbose logging useful for troubleshooting."
     },
     "interactiveAgent": {
@@ -239,6 +246,47 @@
       "swapPosition": "Swap FAB positions",
       "swapPositionDescription": "Move the Chat button to the left and the Create button to the right",
       "hint": "The two floating action buttons (Create and Chat) sit in the bottom corners of the control center. Enable this toggle to swap their positions."
+    },
+    "security": {
+      "title": "Supply Chain Security",
+      "sectionTitle": "Security",
+      "sectionDescription": "Policy-driven supply chain security enforcement",
+      "mode": "Security Mode",
+      "modeDescription": "Controls how security policy is enforced",
+      "modeDisabled": "Disabled",
+      "modeAdvisory": "Advisory",
+      "modeEnforce": "Enforce",
+      "policySource": "Policy Source",
+      "policySourceNone": "Settings only",
+      "lastEvaluation": "Last Evaluation",
+      "lastEvaluationNever": "Never",
+      "recentFindings": "Recent Findings",
+      "noFindings": "No findings",
+      "runEnforcement": "Run Enforcement",
+      "running": "Running...",
+      "severity": {
+        "Low": "Low",
+        "Medium": "Medium",
+        "High": "High",
+        "Critical": "Critical"
+      },
+      "hint": "Security mode controls how the policy engine handles violations. Advisory mode logs findings without blocking. Enforce mode blocks risky actions and fails builds.",
+      "links": {
+        "securitySpec": "Security spec"
+      },
+      "badge": {
+        "advisory": "Advisory",
+        "enforce": "Enforce",
+        "disabled": "Disabled"
+      },
+      "panel": {
+        "title": "Security",
+        "governance": "Governance",
+        "dependencies": "Dependencies",
+        "noFindings": "No security findings",
+        "findingsByCategory": "Findings by Severity",
+        "totalFindings": "{{count}} finding(s)"
+      }
     },
     "database": {
       "title": "Database",
@@ -300,6 +348,8 @@
     "aspmAiReview": "AI Review",
     "aspmCompliance": "Compliance",
     "collaboration": "Collaboration",
+    "clusters": "Clusters",
+    "plugins": "Plugins",
     "projectMemory": "Project Memory"
   },
   "sidebar": {
@@ -400,6 +450,7 @@
     "cancel": "Cancel",
     "archive": "Archive",
     "fastMode": "Fast Mode",
+    "explorationMode": "Exploration Mode",
     "specDriven": "Spec Driven",
     "copied": "Copied!",
     "chatWithAgent": "Chat with agent",
@@ -742,6 +793,54 @@
     "promptCount_many": "{{count}} prompts",
     "overrideCount_few": "{{count}} overrides",
     "overrideCount_many": "{{count}} overrides"
+  },
+  "cluster": {
+    "status": {
+      "provisioning": "Provisioning",
+      "ready": "Ready",
+      "stopping": "Stopping",
+      "stopped": "Stopped",
+      "error": "Error",
+      "destroying": "Destroying"
+    },
+    "createTitle": "Create cluster",
+    "createDescription": "Spin up a local k3s Kubernetes cluster in Docker.",
+    "createAndProvision": "Create & provision",
+    "creating": "Creating…",
+    "nameLabel": "Name",
+    "namePlaceholder": "my-cluster",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "What is this cluster for?",
+    "argoCdLabel": "Install ArgoCD",
+    "argoCdDescription": "Bootstrap GitOps with ArgoCD after the cluster is ready.",
+    "provision": "Provision",
+    "destroy": "Destroy",
+    "remove": "Remove",
+    "cancel": "Cancel",
+    "removeCluster": "Remove cluster",
+    "removeConfirmTitle": "Remove this cluster?",
+    "removeConfirmDescription": "Cluster \"{{name}}\" will be removed from Shep. If it is running it will be destroyed first.",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "fieldStatus": "Status",
+    "fieldKubeconfig": "Kubeconfig",
+    "fieldArgoCd": "ArgoCD",
+    "fieldArgoCdNamespace": "ArgoCD namespace",
+    "fieldLastProvisioned": "Last provisioned",
+    "fieldLastHealthCheck": "Last health check",
+    "fieldError": "Error",
+    "tabOverview": "Overview",
+    "tabRepositories": "Repositories",
+    "tabApplications": "Applications",
+    "tabStatus": "Live status",
+    "noLinkedRepos": "No repositories linked yet.",
+    "noLinkedApps": "No applications linked yet.",
+    "statusLive": "Live cluster status updates here once the cluster is ready.",
+    "statusNotAvailable": "Live status is only available when the cluster is Ready.",
+    "linkedRepos_one": "{{count}} repo",
+    "linkedRepos_other": "{{count}} repos",
+    "linkedApps_one": "{{count}} app",
+    "linkedApps_other": "{{count}} apps"
   },
   "memory": {
     "title": "Project Memory",

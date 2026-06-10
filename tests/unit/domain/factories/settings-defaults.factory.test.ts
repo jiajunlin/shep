@@ -18,7 +18,12 @@ import type {
   EnvironmentConfig,
   SystemConfig,
 } from '@/domain/generated/output.js';
-import { AgentType, AgentAuthMethod, SkillSourceType } from '@/domain/generated/output.js';
+import {
+  AgentType,
+  AgentAuthMethod,
+  SkillSourceType,
+  SecurityMode,
+} from '@/domain/generated/output.js';
 
 describe('createDefaultSettings', () => {
   describe('return type and structure', () => {
@@ -298,6 +303,9 @@ describe('createDefaultSettings', () => {
           prChecksFailed: true,
           prBlocked: true,
           mergeReviewReady: true,
+          workflowStarted: true,
+          workflowCompleted: true,
+          workflowFailed: true,
         },
       });
     });
@@ -309,7 +317,7 @@ describe('createDefaultSettings', () => {
       expect(settings.featureFlags).toBeDefined();
     });
 
-    it('should default feature flags with envDeploy / projects / codeReview / collaboration / aspm enabled', () => {
+    it('should default feature flags with envDeploy / projects / codeReview / collaboration / aspm / supplyChainSecurity enabled', () => {
       const settings = createDefaultSettings();
       expect(settings.featureFlags).toEqual({
         envDeploy: true,
@@ -321,6 +329,12 @@ describe('createDefaultSettings', () => {
         aspm: true,
         bedrockIntegration: true,
         whatsappDispatch: false,
+        clusters: false,
+        // Master kill switch for the supply chain security feature —
+        // defaults to true so existing users keep the feature they already see.
+        supplyChainSecurity: true,
+        scheduledWorkflows: false,
+        githubImport: true,
       });
     });
 
@@ -334,9 +348,14 @@ describe('createDefaultSettings', () => {
   });
 
   describe('WorkflowConfig defaults', () => {
-    it('should default workflow.defaultFastMode to true', () => {
+    it('should default workflow.defaultMode to Fast', () => {
       const settings = createDefaultSettings();
-      expect(settings.workflow.defaultFastMode).toBe(true);
+      expect(settings.workflow.defaultMode).toBe('Fast');
+    });
+
+    it('should default workflow.explorationMaxIterations to 10', () => {
+      const settings = createDefaultSettings();
+      expect(settings.workflow.explorationMaxIterations).toBe(10);
     });
 
     it('should include all workflow defaults', () => {
@@ -352,7 +371,8 @@ describe('createDefaultSettings', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        defaultFastMode: true,
+        defaultMode: 'Fast',
+        explorationMaxIterations: 10,
         autoArchiveDelayMinutes: 10,
         skillInjection: {
           enabled: false,
@@ -476,6 +496,31 @@ describe('createDefaultSettings', () => {
     });
   });
 
+  describe('SecurityConfig defaults', () => {
+    it('should have security field defined', () => {
+      const settings = createDefaultSettings();
+      expect(settings.security).toBeDefined();
+    });
+
+    it('should default security.mode to Advisory', () => {
+      const settings = createDefaultSettings();
+      expect(settings.security?.mode).toBe(SecurityMode.Advisory);
+    });
+
+    it('should not set optional security fields', () => {
+      const settings = createDefaultSettings();
+      expect(settings.security?.lastEvaluationAt).toBeUndefined();
+      expect(settings.security?.policySource).toBeUndefined();
+    });
+
+    it('should match TypeSpec model defaults', () => {
+      const settings = createDefaultSettings();
+      expect(settings.security).toEqual({
+        mode: SecurityMode.Advisory,
+      });
+    });
+  });
+
   describe('complete default object', () => {
     it('should return complete Settings object matching all TypeSpec defaults', () => {
       // Act
@@ -516,6 +561,9 @@ describe('createDefaultSettings', () => {
           prChecksFailed: true,
           prBlocked: true,
           mergeReviewReady: true,
+          workflowStarted: true,
+          workflowCompleted: true,
+          workflowFailed: true,
         },
       });
     });

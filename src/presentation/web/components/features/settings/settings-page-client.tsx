@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useRef, useEffect, useCallback } from 'react';
+import { useState, useTransition, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   Check,
   Bot,
@@ -19,6 +19,8 @@ import {
   MessageSquare,
   LayoutGrid,
   Home,
+  Shield,
+  MessageCircle,
   Eye,
   EyeOff,
   Github,
@@ -43,12 +45,14 @@ import {
   AgentAuthMethod,
   EditorType,
   Language,
+  SecurityMode,
   TerminalType,
 } from '@shepai/core/domain/generated/output';
 import { getEditorTypeIcon } from '@/components/common/editor-type-icons';
 import { AgentModelPicker } from '@/components/features/settings/AgentModelPicker';
 import { GithubIntegrationSection } from '@/components/features/settings/github-integration-section';
 import { WhatsAppSettings } from '@/components/features/settings/whatsapp/whatsapp-settings';
+import { MessagingSettingsSection } from '@/components/features/settings/messaging-settings-section';
 const LANGUAGE_OPTIONS = [
   { value: Language.English, nativeName: 'English' },
   { value: Language.Ukrainian, nativeName: 'Українська' },
@@ -61,6 +65,7 @@ const LANGUAGE_OPTIONS = [
   { value: Language.German, nativeName: 'Deutsch' },
 ];
 import { TimeoutSlider } from '@/components/features/settings/timeout-slider';
+import { SupplyChainSecuritySettingsSection } from '@/components/features/settings/supply-chain-security-settings-section';
 import type {
   Settings,
   FeatureFlags,
@@ -101,9 +106,11 @@ const SECTIONS = [
   { id: 'agent', labelKey: 'settings.sections.agent', icon: Bot },
   { id: 'environment', labelKey: 'settings.sections.environment', icon: Terminal },
   { id: 'workflow', labelKey: 'settings.sections.workflow', icon: GitBranch },
+  { id: 'security', labelKey: 'settings.sections.security', icon: Shield },
   { id: 'ci', labelKey: 'settings.sections.ci', icon: Activity },
   { id: 'stage-timeouts', labelKey: 'settings.sections.timeouts', icon: Timer },
   { id: 'notifications', labelKey: 'settings.sections.notifications', icon: Bell },
+  { id: 'messaging', labelKey: 'settings.sections.messaging', icon: MessageCircle },
   { id: 'feature-flags', labelKey: 'settings.sections.flags', icon: Flag },
   { id: 'interactive-agent', labelKey: 'settings.sections.chat', icon: MessageSquare },
   { id: 'home-page', labelKey: 'settings.sections.homePage', icon: Home },
@@ -406,6 +413,10 @@ export function SettingsPageClient({
     aspm: false,
     bedrockIntegration: true,
     whatsappDispatch: false,
+    clusters: false,
+    supplyChainSecurity: true,
+    scheduledWorkflows: false,
+    githubImport: true,
   };
 
   // Language state
@@ -456,9 +467,7 @@ export function SettingsPageClient({
   const [commitEvidence, setCommitEvidence] = useState(settings.workflow.commitEvidence);
   const [ciWatchEnabled, setCiWatchEnabled] = useState(settings.workflow.ciWatchEnabled !== false);
   const [hideCiStatus, setHideCiStatus] = useState(settings.workflow.hideCiStatus !== false);
-  const [defaultFastMode, setDefaultFastMode] = useState(
-    settings.workflow.defaultFastMode !== false
-  );
+  const [defaultMode, setDefaultMode] = useState(settings.workflow.defaultMode ?? 'Fast');
   // Auto-archive state
   const [autoArchiveEnabled, setAutoArchiveEnabled] = useState(
     (settings.workflow.autoArchiveDelayMinutes ?? 10) > 0
@@ -612,7 +621,7 @@ export function SettingsPageClient({
       commitEvidence?: boolean;
       ciWatchEnabled?: boolean;
       hideCiStatus?: boolean;
-      defaultFastMode?: boolean;
+      defaultMode?: string;
       autoArchiveEnabled?: boolean;
       autoArchiveDelay?: string;
       ciMaxFix?: string;
@@ -645,7 +654,7 @@ export function SettingsPageClient({
         commitEvidence: overrides.commitEvidence ?? commitEvidence,
         ciWatchEnabled: overrides.ciWatchEnabled ?? ciWatchEnabled,
         hideCiStatus: overrides.hideCiStatus ?? hideCiStatus,
-        defaultFastMode: overrides.defaultFastMode ?? defaultFastMode,
+        defaultMode: overrides.defaultMode ?? defaultMode,
         autoArchiveDelayMinutes: archiveEnabled
           ? Number.isNaN(archiveDelay) || archiveDelay < 1
             ? 10
@@ -688,11 +697,21 @@ export function SettingsPageClient({
 
   const [activeSection, setActiveSection] = useState<string>('agent');
 
+  // Filter sections based on feature flags. When supplyChainSecurity is off,
+  // hide the Security nav tab AND the section below so the feature is fully inert.
+  const visibleSections = useMemo<readonly (typeof SECTIONS)[number][]>(
+    () =>
+      SECTIONS.filter(
+        (s: (typeof SECTIONS)[number]) => s.id !== 'security' || flags.supplyChainSecurity
+      ),
+    [flags.supplyChainSecurity]
+  );
+
   // Track which section is in view via IntersectionObserver
   useEffect(() => {
-    const els = SECTIONS.map((s) => document.getElementById(`section-${s.id}`)).filter(
-      Boolean
-    ) as HTMLElement[];
+    const els = visibleSections
+      .map((s) => document.getElementById(`section-${s.id}`))
+      .filter(Boolean) as HTMLElement[];
     if (els.length === 0) return;
 
     const observer = new IntersectionObserver(
@@ -708,7 +727,7 @@ export function SettingsPageClient({
 
     for (const el of els) observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [visibleSections]);
 
   const scrollToSection = useCallback((id: string) => {
     const el = document.getElementById(`section-${id}`);
@@ -748,7 +767,7 @@ export function SettingsPageClient({
             </span>
           </span>
           <nav className="ml-auto flex items-center gap-0.5">
-            {SECTIONS.map((s) => {
+            {visibleSections.map((s) => {
               const SectionIcon = s.icon;
               const isActive = activeSection === s.id;
               return (
@@ -1092,17 +1111,33 @@ export function SettingsPageClient({
             description={t('settings.workflow.sectionDescription')}
             testId="workflow-settings-section"
           >
-            <SwitchRow
-              label={t('settings.workflow.defaultFastMode')}
-              description={t('settings.workflow.defaultFastModeDescription')}
-              id="default-fast-mode"
-              testId="switch-default-fast-mode"
-              checked={defaultFastMode}
-              onChange={(v) => {
-                setDefaultFastMode(v);
-                save(buildWorkflowPayload({ defaultFastMode: v }));
-              }}
-            />
+            <SettingsRow
+              label={t('settings.workflow.defaultMode')}
+              description={t('settings.workflow.defaultModeDescription')}
+            >
+              <Select
+                value={defaultMode}
+                onValueChange={(v) => {
+                  setDefaultMode(v);
+                  save(buildWorkflowPayload({ defaultMode: v }));
+                }}
+              >
+                <SelectTrigger
+                  id="default-mode"
+                  data-testid="default-mode-select"
+                  className="w-55 cursor-pointer text-xs"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Regular">{t('settings.workflow.modeRegular')}</SelectItem>
+                  <SelectItem value="Fast">{t('settings.workflow.modeFast')}</SelectItem>
+                  <SelectItem value="Exploration">
+                    {t('settings.workflow.modeExploration')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </SettingsRow>
             <SubsectionLabel>{t('settings.workflow.subsections.approve')}</SubsectionLabel>
             <SwitchRow
               label={t('settings.workflow.autoApprovePrd')}
@@ -1258,6 +1293,34 @@ export function SettingsPageClient({
             {t('settings.workflow.hint')}
           </SectionHint>
         </div>
+
+        {/* ── Security ── (hidden when supplyChainSecurity feature flag is off) */}
+        {flags.supplyChainSecurity ? (
+          <div
+            id="section-security"
+            className="grid scroll-mt-18 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[1fr_280px]"
+          >
+            <SupplyChainSecuritySettingsSection
+              securityState={{
+                mode: settings.security?.mode ?? SecurityMode.Advisory,
+                lastEvaluationAt: settings.security?.lastEvaluationAt ?? null,
+                policySource: settings.security?.policySource ?? null,
+                recentEvents: [],
+                highestSeverityFinding: null,
+              }}
+            />
+            <SectionHint
+              links={[
+                {
+                  label: t('settings.security.links.securitySpec'),
+                  href: 'https://github.com/shep-ai/shep/blob/main/specs/083-supply-chain-security/spec.yaml',
+                },
+              ]}
+            >
+              {t('settings.security.hint')}
+            </SectionHint>
+          </div>
+        ) : null}
 
         {/* ── CI ── */}
         <div
@@ -1681,6 +1744,45 @@ export function SettingsPageClient({
                 save(buildNotificationPayload({ events: newEvents }));
               }}
             />
+
+            {flags.scheduledWorkflows ? (
+              <>
+                <SubsectionLabel>Scheduled Workflow Events</SubsectionLabel>
+                <SwitchRow
+                  label="Workflow started"
+                  id="notif-event-workflowStarted"
+                  testId="switch-event-workflowStarted"
+                  checked={events.workflowStarted ?? false}
+                  onChange={(v) => {
+                    const newEvents = { ...events, workflowStarted: v };
+                    setEvents(newEvents);
+                    save(buildNotificationPayload({ events: newEvents }));
+                  }}
+                />
+                <SwitchRow
+                  label="Workflow completed"
+                  id="notif-event-workflowCompleted"
+                  testId="switch-event-workflowCompleted"
+                  checked={events.workflowCompleted ?? false}
+                  onChange={(v) => {
+                    const newEvents = { ...events, workflowCompleted: v };
+                    setEvents(newEvents);
+                    save(buildNotificationPayload({ events: newEvents }));
+                  }}
+                />
+                <SwitchRow
+                  label="Workflow failed"
+                  id="notif-event-workflowFailed"
+                  testId="switch-event-workflowFailed"
+                  checked={events.workflowFailed ?? false}
+                  onChange={(v) => {
+                    const newEvents = { ...events, workflowFailed: v };
+                    setEvents(newEvents);
+                    save(buildNotificationPayload({ events: newEvents }));
+                  }}
+                />
+              </>
+            ) : null}
           </SettingsSection>
           <SectionHint
             links={[
@@ -1691,6 +1793,25 @@ export function SettingsPageClient({
             ]}
           >
             {t('settings.notifications.hint')}
+          </SectionHint>
+        </div>
+
+        {/* ── Messaging Remote Control ── */}
+        <div
+          id="section-messaging"
+          className="grid scroll-mt-18 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[1fr_280px]"
+        >
+          <MessagingSettingsSection messaging={settings.messaging} />
+          <SectionHint
+            links={[
+              {
+                label: 'Commands.com Gateway',
+                href: 'https://github.com/Commands-com/gateway',
+              },
+            ]}
+          >
+            Drive Shep remotely from Telegram or WhatsApp. Pair a chat to send commands and receive
+            notifications through the Commands.com Gateway.
           </SectionHint>
         </div>
 
@@ -1810,6 +1931,30 @@ export function SettingsPageClient({
               checked={flags.whatsappDispatch}
               onChange={(v) => {
                 const newFlags = { ...flags, whatsappDispatch: v };
+                setFlags(newFlags);
+                save({ featureFlags: newFlags });
+              }}
+            />
+            <SwitchRow
+              label={t('settings.featureFlags.clusters')}
+              description={t('settings.featureFlags.clustersDescription')}
+              id="flag-clusters"
+              testId="switch-flag-clusters"
+              checked={flags.clusters}
+              onChange={(v) => {
+                const newFlags = { ...flags, clusters: v };
+                setFlags(newFlags);
+                save({ featureFlags: newFlags });
+              }}
+            />
+            <SwitchRow
+              label="Scheduled Workflows"
+              description="Enable scheduled workflows — create, schedule, and execute automated workflows on a cron schedule"
+              id="flag-scheduledWorkflows"
+              testId="switch-flag-scheduledWorkflows"
+              checked={flags.scheduledWorkflows}
+              onChange={(v) => {
+                const newFlags = { ...flags, scheduledWorkflows: v };
                 setFlags(newFlags);
                 save({ featureFlags: newFlags });
               }}

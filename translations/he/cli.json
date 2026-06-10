@@ -187,6 +187,27 @@
         "failedToList": "שגיאה ברשימת הכלים: {{error}}"
       }
     },
+    "security": {
+      "description": "Supply-chain security policy management",
+      "enforce": {
+        "description": "Evaluate repository security posture and enforce policy",
+        "repoOption": "Repository path (defaults to current directory)",
+        "outputOption": "Output format (table, json, yaml)",
+        "passed": "Security enforcement passed",
+        "failed": "Security enforcement failed",
+        "advisoryNote": "Mode is Advisory — findings are reported but do not block",
+        "disabledNote": "Security mode is Disabled — no checks performed",
+        "modeLabel": "Mode",
+        "sourceLabel": "Source",
+        "dependencyFindingsLabel": "Dependency Findings",
+        "releaseIntegrityLabel": "Release Integrity",
+        "totalFindingsLabel": "Total Findings",
+        "governanceFindingsLabel": "GitHub Governance (audit-only)",
+        "noFindings": "No findings",
+        "failedToEnforce": "Failed to evaluate security posture",
+        "flagDisabledNote": "Supply chain security feature flag is off — enforce is a no-op"
+      }
+    },
     "feat": {
       "description": "נהל פיצ'רים לאורך מחזור חיי הפיתוח",
       "new": {
@@ -204,6 +225,8 @@
         "pendingOption": "צור פיצ'ר מבלי להפעיל את הסוכן",
         "fastOption": "דלג על שלבי SDLC ומימש ישירות מההנחיה שלך (ברירת מחדל: מופעל)",
         "noFastOption": "הרץ את כל שלבי ה-SDLC (ניתוח → דרישות → תוכנית → מימוש)",
+        "exploreOption": "Start an exploration/prototyping session for iterative design",
+        "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
         "modelOption": "מזהה מודל LLM להרצה זו (לדוגמה claude-opus-4-6)",
         "noRebaseOption": "Skip syncing main from remote before creating the feature branch",
         "injectSkillsOption": "Inject curated skills into the worktree",
@@ -419,6 +442,28 @@
         "restoredLabel": "שוחזר:",
         "failedToUnarchive": "שחזור הפיצ'ר מארכיון נכשל"
       },
+      "feedback": {
+        "description": "Send feedback on an exploration prototype to iterate",
+        "idArgument": "Feature ID or prefix",
+        "feedbackArgument": "Feedback text for the next iteration",
+        "feedbackSubmitted": "Feedback submitted for: {{name}}",
+        "iterationLabel": "Iteration:",
+        "agentLabel": "Agent:",
+        "agentIterating": "iterating on feedback",
+        "notExploration": "Feature \"{{name}}\" is not in exploration mode (mode: {{mode}}, lifecycle: {{lifecycle}})",
+        "failedToSubmit": "Failed to submit feedback"
+      },
+      "promote": {
+        "description": "Promote an exploration feature to Regular or Fast mode",
+        "idArgument": "Feature ID or prefix",
+        "fastOption": "Promote to Fast mode (skip SDLC phases)",
+        "promoted": "Exploration promoted: {{name}}",
+        "modeLabel": "Mode:",
+        "statusLabel": "Status:",
+        "agentLabel": "Agent:",
+        "agentSpawned": "spawned for {{mode}} mode",
+        "failedToPromote": "Failed to promote exploration"
+      },
       "resolveWaiting": {
         "featureNotFound": "פיצ'ר לא נמצא: \"{{id}}\"",
         "noAgentRun": "לפיצ'ר \"{{name}}\" אין הרצת סוכן",
@@ -539,6 +584,107 @@
       "resolve": {
         "multipleMatch": "Multiple applications match prefix \"{{id}}\": {{matches}}",
         "notFound": "Application not found: {{id}}"
+      }
+    },
+    "cluster": {
+      "description": "ניהול אשכולות",
+      "new": {
+        "description": "יצירת אשכול חדש",
+        "nameArgument": "שם האשכול",
+        "argocdOption": "הפעלת ArgoCD לאספקה מתמשכת עם GitOps",
+        "provisionOption": "התחלת הקצאה מיד לאחר היצירה",
+        "spinnerText": "יוצר אשכול",
+        "clusterCreated": "האשכול נוצר",
+        "idLabel": "מזהה:",
+        "nameLabel": "שם:",
+        "slugLabel": "כינוי:",
+        "statusLabel": "סטטוס:",
+        "argocdLabel": "ArgoCD:",
+        "provisioningStarted": "ההקצאה החלה",
+        "failedToCreate": "יצירת האשכול נכשלה"
+      },
+      "ls": {
+        "description": "הצגת אשכולות",
+        "title": "אשכולות",
+        "idColumn": "מזהה",
+        "nameColumn": "שם",
+        "statusColumn": "סטטוס",
+        "argocdColumn": "ArgoCD",
+        "reposColumn": "מאגרים",
+        "appsColumn": "אפליקציות",
+        "noClusters": "לא נמצאו אשכולות",
+        "failedToList": "הצגת האשכולות נכשלה"
+      },
+      "show": {
+        "description": "הצגת פרטי אשכול",
+        "idArgument": "מזהה האשכול, כינוי או קידומת",
+        "title": "אשכול: {{name}}",
+        "nameLabel": "שם",
+        "slugLabel": "כינוי",
+        "statusLabel": "סטטוס",
+        "descriptionLabel": "תיאור",
+        "argocdLabel": "ArgoCD",
+        "argocdNamespaceLabel": "מרחב שמות ArgoCD",
+        "kubeconfigLabel": "Kubeconfig",
+        "k3dNameLabel": "שם k3d",
+        "nodeCountLabel": "מספר צמתים",
+        "errorLabel": "שגיאה",
+        "configTitle": "הגדרות",
+        "timestampsTitle": "חותמות זמן",
+        "createdLabel": "נוצר",
+        "updatedLabel": "עודכן",
+        "provisionedLabel": "הקצאה אחרונה",
+        "healthCheckLabel": "בדיקת תקינות אחרונה",
+        "linkedTitle": "ישויות מקושרות",
+        "reposLabel": "מאגרים",
+        "appsLabel": "אפליקציות",
+        "failedToShow": "הצגת האשכול נכשלה"
+      },
+      "del": {
+        "description": "מחיקת אשכול",
+        "idArgument": "מזהה האשכול, כינוי או קידומת",
+        "forceOption": "דלג על אישור",
+        "confirmDelete": "למחוק את האשכול \"{{name}}\"? יושמד אם פעיל.",
+        "cancelled": "בוטל",
+        "clusterDeleted": "האשכול נמחק",
+        "nameLabel": "שם:",
+        "slugLabel": "כינוי:",
+        "failedToDelete": "מחיקת האשכול נכשלה"
+      },
+      "link": {
+        "description": "קישור מאגר או אפליקציה לאשכול",
+        "clusterArgument": "מזהה האשכול, כינוי או קידומת",
+        "entityArgument": "מזהה המאגר או האפליקציה",
+        "linked": "קושר לאשכול",
+        "clusterLabel": "אשכול:",
+        "entityLabel": "ישות:",
+        "failedToLink": "קישור הישות לאשכול נכשל"
+      },
+      "unlink": {
+        "description": "ניתוק מאגר או אפליקציה מאשכול",
+        "clusterArgument": "מזהה האשכול, כינוי או קידומת",
+        "entityArgument": "מזהה המאגר או האפליקציה",
+        "unlinked": "נותק מהאשכול",
+        "clusterLabel": "אשכול:",
+        "entityLabel": "ישות:",
+        "failedToUnlink": "ניתוק הישות מהאשכול נכשל"
+      },
+      "status": {
+        "description": "הצגת סטטוס אשכול בזמן אמת",
+        "idArgument": "מזהה האשכול, כינוי או קידומת",
+        "title": "סטטוס אשכול: {{name}}",
+        "statusLabel": "סטטוס",
+        "podCountLabel": "פודים",
+        "serviceCountLabel": "שירותים",
+        "argocdLabel": "ArgoCD",
+        "notReady": "האשכול אינו במצב מוכן",
+        "podsTitle": "פודים",
+        "servicesTitle": "שירותים",
+        "failedToGetStatus": "קבלת סטטוס האשכול נכשלה"
+      },
+      "resolve": {
+        "multipleMatch": "מספר אשכולות תואמים לקידומת \"{{id}}\": {{matches}}",
+        "notFound": "האשכול לא נמצא: {{id}}"
       }
     },
     "agent": {
@@ -704,6 +850,88 @@
         "description": "Post a completed review to GitHub",
         "idArgument": "Review ID (or prefix)",
         "failedToPost": "Failed to post review to GitHub"
+      }
+    },
+    "plugin": {
+      "description": "Manage AI tool plugins",
+      "add": {
+        "description": "Install a plugin from catalog or custom configuration",
+        "nameArg": "Plugin name from the curated catalog",
+        "typeOption": "Plugin type for custom install (mcp, hook, cli)",
+        "commandOption": "MCP server command for custom install",
+        "transportOption": "MCP transport protocol (stdio, http)",
+        "nameOption": "Plugin name for custom install",
+        "success": "Plugin \"{{name}}\" installed successfully",
+        "failed": "Failed to install plugin",
+        "customRequiresName": "Custom plugin install requires --name",
+        "customRequiresType": "Custom plugin install requires --type (mcp, hook, cli)",
+        "invalidType": "Invalid plugin type \"{{type}}\". Must be one of: mcp, hook, cli"
+      },
+      "remove": {
+        "description": "Remove an installed plugin",
+        "nameArg": "Name of the plugin to remove",
+        "success": "Plugin \"{{name}}\" removed",
+        "failed": "Failed to remove plugin"
+      },
+      "list": {
+        "description": "List all installed plugins",
+        "title": "Installed Plugins",
+        "nameColumn": "Name",
+        "typeColumn": "Type",
+        "statusColumn": "Status",
+        "healthColumn": "Health",
+        "sourceColumn": "Source",
+        "noPlugins": "No plugins installed. Run 'shep plugin catalog' to browse available plugins.",
+        "failed": "Failed to list plugins"
+      },
+      "enable": {
+        "description": "Enable a plugin globally",
+        "nameArg": "Name of the plugin to enable",
+        "success": "Plugin \"{{name}}\" enabled",
+        "failed": "Failed to enable plugin"
+      },
+      "disable": {
+        "description": "Disable a plugin globally",
+        "nameArg": "Name of the plugin to disable",
+        "success": "Plugin \"{{name}}\" disabled",
+        "failed": "Failed to disable plugin"
+      },
+      "configure": {
+        "description": "Configure plugin settings",
+        "nameArg": "Name of the plugin to configure",
+        "toolGroupsOption": "Comma-separated list of tool groups to enable",
+        "success": "Plugin \"{{name}}\" configured",
+        "noOptions": "No configuration options provided. Use --tool-groups to set active tool groups.",
+        "failed": "Failed to configure plugin"
+      },
+      "status": {
+        "description": "Show detailed health status of a plugin",
+        "nameArg": "Name of the plugin to check (omit for all)",
+        "title": "Plugin Health Status",
+        "allTitle": "Plugin Health Check",
+        "nameLabel": "Name",
+        "typeLabel": "Type",
+        "healthLabel": "Health",
+        "messageLabel": "Details",
+        "enabledLabel": "Enabled",
+        "runtimeLabel": "Runtime",
+        "transportLabel": "Transport",
+        "envVarsLabel": "Required Env Vars",
+        "toolGroupsLabel": "Tool Groups",
+        "activeGroupsLabel": "Active Groups",
+        "noPlugins": "No plugins installed.",
+        "failed": "Failed to check plugin health"
+      },
+      "catalog": {
+        "description": "Browse available plugins from the curated catalog",
+        "title": "Plugin Catalog",
+        "nameColumn": "Name",
+        "typeColumn": "Type",
+        "descriptionColumn": "Description",
+        "statusColumn": "Status",
+        "installed": "Installed",
+        "available": "Available",
+        "failed": "Failed to load plugin catalog"
       }
     }
   },

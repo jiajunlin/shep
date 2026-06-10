@@ -48,6 +48,9 @@ const defaultFlags = {
   bedrockIntegration: false,
   whatsappDispatch: false,
   aspm: false,
+  clusters: false,
+  scheduledWorkflows: false,
+  githubImport: true,
 };
 
 function renderWithSidebar(ui: React.ReactElement) {

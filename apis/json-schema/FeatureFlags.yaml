@@ -38,6 +38,22 @@ properties:
     type: boolean
     default: true
     description: Enable the Application Security Posture Management (ASPM) module — /aspm web routes, `shep aspm` CLI command tree, and the posture SSE stream (spec 098)
+  clusters:
+    type: boolean
+    default: false
+    description: Enable Clusters navigation and Kubernetes cluster management in the web UI
+  supplyChainSecurity:
+    type: boolean
+    default: true
+    description: Enable the supply chain security feature (policy engine, badges, settings, CLI, CI gate). When false, the feature is inert regardless of SecurityMode.
+  scheduledWorkflows:
+    type: boolean
+    default: false
+    description: Enable scheduled workflows feature — workflow creation, scheduling, and execution
+  githubImport:
+    type: boolean
+    default: true
+    description: Enable GitHub repository import flow (clone, fork, and add to Shep)
 required:
   - envDeploy
   - debug
@@ -48,4 +64,8 @@ required:
   - bedrockIntegration
   - whatsappDispatch
   - aspm
+  - clusters
+  - supplyChainSecurity
+  - scheduledWorkflows
+  - githubImport
 description: Feature flag toggles for runtime feature control

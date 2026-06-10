@@ -156,6 +156,11 @@ export function mapEventTypeToState(eventType: NotificationEventType): FeatureNo
       // Questions inbox and supervisor "Why?" drawer rather than mutating
       // feature-node state directly.
       return 'running';
+    case NotificationEventType.WorkflowStarted:
+    case NotificationEventType.WorkflowCompleted:
+    case NotificationEventType.WorkflowFailed:
+      // Scheduled workflow events do not affect feature node state.
+      return 'running';
   }
 }
 
@@ -168,6 +173,7 @@ export const sdlcLifecycleMap: Record<string, FeatureLifecyclePhase> = {
   'Deploy & QA': 'deploy',
   Maintain: 'maintain',
   Pending: 'pending',
+  Exploring: 'exploring',
   Archived: 'maintain',
 };
 
@@ -182,6 +188,7 @@ const phaseNameToLifecycle: Record<string, FeatureLifecyclePhase> = {
   maintain: 'maintain',
   blocked: 'requirements',
   pending: 'pending',
+  exploring: 'exploring',
   archived: 'maintain',
 };
 

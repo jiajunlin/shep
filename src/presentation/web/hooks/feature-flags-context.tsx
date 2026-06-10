@@ -13,6 +13,9 @@ const defaultFlags: FeatureFlagsState = {
   bedrockIntegration: true,
   whatsappDispatch: false,
   aspm: false,
+  clusters: false,
+  scheduledWorkflows: false,
+  githubImport: true,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsState>(defaultFlags);

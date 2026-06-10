@@ -61,6 +61,7 @@ import {
   SdlcLifecycle,
   TaskState,
   AgentType,
+  BuildMode,
 } from '@/domain/generated/output.js';
 
 // ---------------------------------------------------------------------------
@@ -101,6 +102,7 @@ function makeFeature(overrides?: Partial<Feature>): Feature {
       updatedAt: new Date(),
     },
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: false,
     openPr: false,

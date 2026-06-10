@@ -2,19 +2,23 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import type { Edge, Position } from '@xyflow/react';
 import type { CanvasNodeType } from '@/components/features/features-canvas';
 import type { FeatureNodeData } from '@/components/common/feature-node';
 import type { RepositoryNodeData } from '@/components/common/repository-node';
 import type { ApplicationNodeData } from '@/components/common/application-node/application-node-config';
+import type { ClusterNodeData } from '@/components/common/cluster-node/cluster-node-config';
 import {
   deriveGraph,
   type FeatureEntry,
   type RepoEntry,
   type ApplicationEntry,
+  type ClusterEntry,
   type GraphCallbacks,
 } from '@/lib/derive-graph';
 import { layoutWithDagre, getCanvasLayoutDefaults } from '@/lib/layout-with-dagre';
+import { reparentFeature as reparentFeatureAction } from '@/app/actions/reparent-feature';
 
 export type { GraphCallbacks } from '@/lib/derive-graph';
 
@@ -47,6 +51,8 @@ export interface UseGraphStateReturn {
   replaceRepository: (tempId: string, realId: string, data: RepositoryNodeData) => void;
   /** Stable lookup: get the repositoryPath for a feature node. */
   getFeatureRepositoryPath: (featureNodeId: string) => string | undefined;
+  /** Stable lookup: get a feature entry from the domain Map. */
+  getFeatureEntry: (nodeId: string) => FeatureEntry | undefined;
   /** Stable lookup: get repository node data by nodeId. */
   getRepositoryData: (nodeId: string) => RepositoryNodeData | undefined;
   /** Stable lookup: get the current number of repositories in the domain Map. */
@@ -57,6 +63,11 @@ export interface UseGraphStateReturn {
   removeApplication: (nodeId: string) => void;
   /** Update callbacks injected into node data (does NOT trigger re-render). */
   setCallbacks: (callbacks: GraphCallbacks) => void;
+  /**
+   * Optimistically reparent a feature (set/clear parentNodeId in featureMap).
+   * Calls the reparent-feature server action; rolls back on error.
+   */
+  reparentFeature: (childNodeId: string, newParentNodeId: string | null) => void;
   /**
    * Signal that an optimistic mutation has started. While any mutation is
    * in-flight, `reconcile` becomes a no-op so stale poll data cannot
@@ -80,18 +91,29 @@ function parseMaps(
   featureMap: Map<string, FeatureEntry>;
   repoMap: Map<string, RepoEntry>;
   applicationMap: Map<string, ApplicationEntry>;
+  clusterMap: Map<string, ClusterEntry>;
 } {
   // Build parentNodeId map from dependency edges
   const parentByChild = new Map<string, string>();
+  // Build cluster→repo linked IDs from cluster edges
+  const clusterLinkedRepos = new Map<string, string[]>();
   for (const edge of initialEdges) {
     if (edge.type === 'dependencyEdge') {
       parentByChild.set(edge.target, edge.source);
+    }
+    if (edge.id.startsWith('cluster-edge-')) {
+      const repoIds = clusterLinkedRepos.get(edge.source) ?? [];
+      // Extract repo ID from "repo-<uuid>" node ID
+      const repoId = edge.target.startsWith('repo-') ? edge.target.slice(5) : edge.target;
+      repoIds.push(repoId);
+      clusterLinkedRepos.set(edge.source, repoIds);
     }
   }
 
   const featureMap = new Map<string, FeatureEntry>();
   const repoMap = new Map<string, RepoEntry>();
   const applicationMap = new Map<string, ApplicationEntry>();
+  const clusterMap = new Map<string, ClusterEntry>();
 
   for (const node of initialNodes) {
     if (node.type === 'featureNode') {
@@ -112,10 +134,16 @@ function parseMaps(
         nodeId: node.id,
         data: node.data as ApplicationNodeData,
       });
+    } else if (node.type === 'clusterNode') {
+      clusterMap.set(node.id, {
+        nodeId: node.id,
+        data: node.data as ClusterNodeData,
+        linkedRepoIds: clusterLinkedRepos.get(node.id),
+      });
     }
   }
 
-  return { featureMap, repoMap, applicationMap };
+  return { featureMap, repoMap, applicationMap, clusterMap };
 }
 
 type FeatureDataUpdates = Partial<
@@ -165,6 +193,7 @@ export function useGraphState(
   const [applicationMap, setApplicationMap] = useState<Map<string, ApplicationEntry>>(
     init.applicationMap
   );
+  const [clusterMap, setClusterMap] = useState<Map<string, ClusterEntry>>(init.clusterMap);
   const [pendingMap, setPendingMap] = useState<Map<string, FeatureEntry>>(
     new Map<string, FeatureEntry>()
   );
@@ -218,6 +247,8 @@ export function useGraphState(
         callbacksRef.current.onApplicationDelete?.(applicationId),
       onApplicationCreateSddFeature: (applicationId) =>
         callbacksRef.current.onApplicationCreateSddFeature?.(applicationId),
+      onClusterClick: (clusterId) => callbacksRef.current.onClusterClick?.(clusterId),
+      onClusterDelete: (clusterId) => callbacksRef.current.onClusterDelete?.(clusterId),
     }),
     []
   );
@@ -243,8 +274,16 @@ export function useGraphState(
 
   // Derive graph from domain Maps (runs on every Map change, but dagre only on topology change)
   const derived = useMemo(
-    () => deriveGraph(visibleFeatureMap, repoMap, pendingMap, stableCallbacks, applicationMap),
-    [visibleFeatureMap, repoMap, pendingMap, stableCallbacks, applicationMap]
+    () =>
+      deriveGraph(
+        visibleFeatureMap,
+        repoMap,
+        pendingMap,
+        stableCallbacks,
+        applicationMap,
+        clusterMap
+      ),
+    [visibleFeatureMap, repoMap, pendingMap, stableCallbacks, applicationMap, clusterMap]
   );
 
   // Cache dagre layout positions — only re-run when node set or edge connections change
@@ -448,10 +487,19 @@ export function useGraphState(
     });
 
     // Reconcile applicationMap
-    const { applicationMap: newApplicationMap } = parseMaps(newNodes, newEdges);
+    const { applicationMap: newApplicationMap, clusterMap: newClusterMap } = parseMaps(
+      newNodes,
+      newEdges
+    );
     setApplicationMap((currentAppMap) => {
       if (mapsEqual(currentAppMap, newApplicationMap)) return currentAppMap;
       return newApplicationMap;
+    });
+
+    // Reconcile clusterMap
+    setClusterMap((currentClusterMap) => {
+      if (mapsEqual(currentClusterMap, newClusterMap)) return currentClusterMap;
+      return newClusterMap;
     });
   }, []);
 
@@ -586,6 +634,10 @@ export function useGraphState(
     return featureMapRef.current.get(featureNodeId)?.data.repositoryPath;
   }, []);
 
+  const getFeatureEntry = useCallback((nodeId: string): FeatureEntry | undefined => {
+    return featureMapRef.current.get(nodeId);
+  }, []);
+
   const getRepositoryData = useCallback((nodeId: string): RepositoryNodeData | undefined => {
     return repoMapRef.current.get(nodeId)?.data;
   }, []);
@@ -597,6 +649,75 @@ export function useGraphState(
   const setCallbacks = useCallback((callbacks: GraphCallbacks) => {
     callbacksRef.current = callbacks;
   }, []);
+
+  const reparentFeatureCallback = useCallback(
+    (childNodeId: string, newParentNodeId: string | null) => {
+      // Snapshot previous parentNodeId for rollback
+      const entry = featureMapRef.current.get(childNodeId);
+      if (!entry) return;
+      const prevParentNodeId = entry.parentNodeId;
+
+      // Extract featureId from node ID (strip 'feat-' prefix)
+      const featureId = childNodeId.startsWith('feat-') ? childNodeId.slice(5) : childNodeId;
+      // Extract parent featureId (strip 'feat-' prefix), or null for unparent
+      const parentFeatureId = newParentNodeId
+        ? newParentNodeId.startsWith('feat-')
+          ? newParentNodeId.slice(5)
+          : newParentNodeId
+        : null;
+
+      // Optimistic update
+      mutationCountRef.current++;
+      setFeatureMap((prev) => {
+        const current = prev.get(childNodeId);
+        if (!current) return prev;
+        const next = new Map(prev);
+        next.set(childNodeId, {
+          ...current,
+          parentNodeId: newParentNodeId ?? undefined,
+        });
+        return next;
+      });
+
+      // Call server action
+      reparentFeatureAction(featureId, parentFeatureId)
+        .then((result) => {
+          if (!result.success) {
+            // Rollback optimistic update
+            setFeatureMap((prev) => {
+              const current = prev.get(childNodeId);
+              if (!current) return prev;
+              const next = new Map(prev);
+              next.set(childNodeId, { ...current, parentNodeId: prevParentNodeId });
+              return next;
+            });
+            toast.error(result.error ?? 'Failed to reparent feature');
+          } else {
+            toast.success(newParentNodeId ? 'Feature reparented' : 'Feature detached from parent');
+          }
+        })
+        .catch(() => {
+          // Rollback optimistic update
+          setFeatureMap((prev) => {
+            const current = prev.get(childNodeId);
+            if (!current) return prev;
+            const next = new Map(prev);
+            next.set(childNodeId, { ...current, parentNodeId: prevParentNodeId });
+            return next;
+          });
+          toast.error('Failed to reparent feature');
+        })
+        .finally(() => {
+          // Delay decrement for poll cooldown
+          const timer = setTimeout(() => {
+            mutationCountRef.current = Math.max(0, mutationCountRef.current - 1);
+            mutationTimersRef.current.delete(timer);
+          }, 3_000);
+          mutationTimersRef.current.add(timer);
+        });
+    },
+    []
+  );
 
   const beginMutation = useCallback(() => {
     mutationCountRef.current++;
@@ -636,11 +757,13 @@ export function useGraphState(
     removeRepository,
     replaceRepository,
     getFeatureRepositoryPath,
+    getFeatureEntry,
     getRepositoryData,
     getRepoMapSize,
     addApplication,
     removeApplication,
     setCallbacks,
+    reparentFeature: reparentFeatureCallback,
     beginMutation,
     endMutation,
     isMutating,

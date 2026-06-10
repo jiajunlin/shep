@@ -39,6 +39,9 @@ vi.mock('@/infrastructure/di/container.js', () => ({
           stop: vi.fn().mockResolvedValue(undefined),
         };
       }
+      if (token === 'IMessagingService') {
+        return mockMessagingService;
+      }
       if (
         token === 'IAgentRunRepository' ||
         token === 'IPhaseTimingRepository' ||
@@ -46,7 +49,10 @@ vi.mock('@/infrastructure/di/container.js', () => ({
         token === 'INotificationService' ||
         token === 'IRepositoryRepository' ||
         token === 'IGitHubRepositoryService' ||
-        token === 'IDesktopNotifier'
+        token === 'IDesktopNotifier' ||
+        token === 'IWorkflowRepository' ||
+        token === 'IWorkflowExecutionRepository' ||
+        token === 'IClock'
       ) {
         return {};
       }
@@ -110,6 +116,16 @@ vi.mock('@/application/use-cases/contributors/publish-monthly-recap.use-case.js'
   PublishMonthlyRecapUseCase: vi.fn(),
 }));
 
+// Mock workflow scheduler
+vi.mock('@/infrastructure/services/workflow-scheduler/workflow-scheduler.service.js', () => ({
+  initializeWorkflowScheduler: vi.fn(),
+  getWorkflowScheduler: vi.fn().mockReturnValue({
+    start: vi.fn().mockResolvedValue(undefined),
+    stop: vi.fn(),
+  }),
+  hasWorkflowScheduler: vi.fn().mockReturnValue(true),
+}));
+
 const mockWebServerService = {
   start: vi.fn().mockResolvedValue(undefined),
   stop: vi.fn().mockResolvedValue(undefined),
@@ -117,6 +133,12 @@ const mockWebServerService = {
 
 const mockDeploymentService = {
   stopAll: vi.fn(),
+};
+
+const mockMessagingService = {
+  isConfigured: vi.fn().mockReturnValue(false),
+  start: vi.fn().mockResolvedValue(undefined),
+  stop: vi.fn().mockResolvedValue(undefined),
 };
 
 import { getNotificationWatcher } from '@/infrastructure/services/notifications/notification-watcher.service.js';

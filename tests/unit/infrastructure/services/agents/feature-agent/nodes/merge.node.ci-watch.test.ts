@@ -231,6 +231,9 @@ function baseState(overrides: Partial<FeatureAgentState> = {}): FeatureAgentStat
     ciFixStatus: 'idle',
     evidence: [],
     evidenceRetries: 0,
+    securityMode: 'Disabled',
+    securityActionDispositions: {},
+    mcpConfigPath: undefined,
     ...overrides,
   } as FeatureAgentState;
 }

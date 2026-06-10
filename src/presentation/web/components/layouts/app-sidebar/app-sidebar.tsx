@@ -13,6 +13,8 @@ import {
   ZapOff,
   Wrench,
   Puzzle,
+  CalendarClock,
+  Plug,
   Settings,
   TableProperties,
   FolderKanban,
@@ -29,6 +31,8 @@ import {
   Sparkles,
   ClipboardCheck,
   Gauge,
+  Server,
+  Webhook,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -191,6 +195,14 @@ export function AppSidebar({
             href="/applications"
             active={pathname === '/applications'}
           />
+          {featureFlags.clusters ? (
+            <SidebarNavItem
+              icon={Server}
+              label={t('navigation.clusters')}
+              href="/clusters"
+              active={pathname?.startsWith('/clusters') ?? false}
+            />
+          ) : null}
           <SidebarNavItem
             icon={LayoutGrid}
             label={t('navigation.controlCenter')}
@@ -313,6 +325,26 @@ export function AppSidebar({
               ]}
             />
           ) : null}
+          {featureFlags.scheduledWorkflows ? (
+            <SidebarNavItem
+              icon={CalendarClock}
+              label="Workflows"
+              href="/workflows"
+              active={pathname === '/workflows'}
+            />
+          ) : null}
+          <SidebarNavItem
+            icon={Plug}
+            label={t('navigation.plugins')}
+            href="/plugins"
+            active={pathname === '/plugins'}
+          />
+          <SidebarNavItem
+            icon={Webhook}
+            label="Webhooks"
+            href="/webhooks"
+            active={pathname === '/webhooks'}
+          />
           <SidebarNavItem
             icon={Settings}
             label={t('navigation.settings')}

@@ -12,6 +12,8 @@ import { GitHubRepositoryService } from '@/infrastructure/services/external/gith
 import {
   GitHubAuthError,
   GitHubCloneError,
+  GitHubForkError,
+  GitHubPermissionError,
   GitHubRepoListError,
   GitHubUrlParseError,
 } from '@/application/ports/output/services/github-repository-service.interface.js';
@@ -408,6 +410,137 @@ describe('GitHubRepositoryService', () => {
 
       await expect(promise).rejects.toThrow(GitHubCloneError);
       expect(mockRm).toHaveBeenCalled();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // getAuthenticatedUser
+  // -------------------------------------------------------------------------
+
+  describe('getAuthenticatedUser()', () => {
+    it('should return the authenticated user login', async () => {
+      mockExecFile.mockResolvedValue({ stdout: 'octocat\n', stderr: '' });
+
+      const result = await service.getAuthenticatedUser();
+
+      expect(result).toBe('octocat');
+      expect(mockExecFile).toHaveBeenCalledWith('gh', ['api', 'user', '--jq', '.login']);
+    });
+
+    it('should throw GitHubAuthError when gh is not installed', async () => {
+      const err = new Error('spawn gh ENOENT') as NodeJS.ErrnoException;
+      err.code = 'ENOENT';
+      mockExecFile.mockRejectedValue(err);
+
+      await expect(service.getAuthenticatedUser()).rejects.toThrow(GitHubAuthError);
+      await expect(service.getAuthenticatedUser()).rejects.toThrow(
+        'Failed to get authenticated user'
+      );
+    });
+
+    it('should throw GitHubAuthError when not authenticated', async () => {
+      mockExecFile.mockRejectedValue(new Error('not logged in'));
+
+      await expect(service.getAuthenticatedUser()).rejects.toThrow(GitHubAuthError);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // checkPushAccess
+  // -------------------------------------------------------------------------
+
+  describe('checkPushAccess()', () => {
+    it('should return hasPushAccess true when user has push permissions', async () => {
+      mockExecFile
+        .mockResolvedValueOnce({ stdout: 'octocat\n', stderr: '' }) // getAuthenticatedUser
+        .mockResolvedValueOnce({ stdout: 'true\n', stderr: '' }); // gh api repos/...
+
+      const result = await service.checkPushAccess('octocat/hello-world');
+
+      expect(result.hasPushAccess).toBe(true);
+      expect(result.viewerLogin).toBe('octocat');
+    });
+
+    it('should return hasPushAccess false when user lacks push permissions', async () => {
+      mockExecFile
+        .mockResolvedValueOnce({ stdout: 'myuser\n', stderr: '' }) // getAuthenticatedUser
+        .mockResolvedValueOnce({ stdout: 'false\n', stderr: '' }); // gh api repos/...
+
+      const result = await service.checkPushAccess('octocat/hello-world');
+
+      expect(result.hasPushAccess).toBe(false);
+      expect(result.viewerLogin).toBe('myuser');
+    });
+
+    it('should throw GitHubPermissionError when API call fails', async () => {
+      mockExecFile
+        .mockResolvedValueOnce({ stdout: 'myuser\n', stderr: '' }) // getAuthenticatedUser
+        .mockRejectedValueOnce(new Error('Not Found')); // gh api repos/...
+
+      await expect(service.checkPushAccess('private/repo')).rejects.toThrow(GitHubPermissionError);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // forkRepository
+  // -------------------------------------------------------------------------
+
+  describe('forkRepository()', () => {
+    it('should fork successfully and detect new fork', async () => {
+      mockExecFile.mockResolvedValue({
+        stdout: 'https://github.com/myuser/hello-world\n',
+        stderr: '',
+      });
+
+      const result = await service.forkRepository('octocat/hello-world');
+
+      expect(result.nameWithOwner).toBe('myuser/hello-world');
+      expect(result.alreadyExisted).toBe(false);
+      expect(mockExecFile).toHaveBeenCalledWith('gh', [
+        'repo',
+        'fork',
+        'octocat/hello-world',
+        '--clone=false',
+      ]);
+    });
+
+    it('should detect already-existing fork', async () => {
+      mockExecFile.mockResolvedValue({
+        stdout: '',
+        stderr: 'https://github.com/myuser/hello-world already exists\n',
+      });
+
+      const result = await service.forkRepository('octocat/hello-world');
+
+      expect(result.alreadyExisted).toBe(true);
+      expect(result.nameWithOwner).toBe('myuser/hello-world');
+    });
+
+    it('should throw GitHubForkError on execFile failure', async () => {
+      mockExecFile.mockRejectedValue(new Error('unable to fork'));
+
+      await expect(service.forkRepository('octocat/hello-world')).rejects.toThrow(GitHubForkError);
+    });
+
+    it('should call onProgress with fork status messages', async () => {
+      mockExecFile.mockResolvedValue({
+        stdout: 'https://github.com/myuser/hello-world\n',
+        stderr: '',
+      });
+      const onProgress = vi.fn();
+
+      await service.forkRepository('octocat/hello-world', { onProgress });
+
+      expect(onProgress).toHaveBeenCalledWith('Forking octocat/hello-world...');
+      expect(onProgress).toHaveBeenCalledWith('Fork created');
+    });
+
+    it('should throw GitHubForkError on ENOENT', async () => {
+      const err = new Error('spawn ENOENT') as NodeJS.ErrnoException;
+      err.code = 'ENOENT';
+      mockExecFile.mockRejectedValue(err);
+
+      await expect(service.forkRepository('octocat/hello-world')).rejects.toThrow(GitHubForkError);
     });
   });
 });

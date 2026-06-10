@@ -496,9 +496,13 @@ export type WorkflowConfig = {
    */
   hideCiStatus?: boolean;
   /**
-   * Default new features to fast mode (default: true)
+   * Default feature mode for new features: 'Regular', 'Fast', or 'Exploration' (default: 'Fast')
    */
-  defaultFastMode: boolean;
+  defaultMode: string;
+  /**
+   * Maximum exploration feedback iterations (default: 10, 0 = unlimited)
+   */
+  explorationMaxIterations?: number;
   /**
    * Minutes after completion before auto-archiving a feature (default: 10, 0 = disabled)
    */
@@ -635,6 +639,18 @@ export type NotificationEventConfig = {
    * Notify when the supervisor evaluator fails and the system falls back to standard human approval (spec 093, FR-22). Default ON — actionable.
    */
   supervisorFailed?: boolean;
+  /**
+   * Notify when a scheduled workflow execution starts
+   */
+  workflowStarted?: boolean;
+  /**
+   * Notify when a scheduled workflow execution completes successfully
+   */
+  workflowCompleted?: boolean;
+  /**
+   * Notify when a scheduled workflow execution fails
+   */
+  workflowFailed?: boolean;
 };
 
 /**
@@ -699,6 +715,22 @@ export type FeatureFlags = {
    * Enable the Application Security Posture Management (ASPM) module — /aspm web routes, `shep aspm` CLI command tree, and the posture SSE stream (spec 098)
    */
   aspm: boolean;
+  /**
+   * Enable Clusters navigation and Kubernetes cluster management in the web UI
+   */
+  clusters: boolean;
+  /**
+   * Enable the supply chain security feature (policy engine, badges, settings, CLI, CI gate). When false, the feature is inert regardless of SecurityMode.
+   */
+  supplyChainSecurity: boolean;
+  /**
+   * Enable scheduled workflows feature — workflow creation, scheduling, and execution
+   */
+  scheduledWorkflows: boolean;
+  /**
+   * Enable GitHub repository import flow (clone, fork, and add to Shep)
+   */
+  githubImport: boolean;
 };
 export enum WhatsAppAdapterKind {
   Baileys = 'baileys',
@@ -808,6 +840,109 @@ export type FabLayoutConfig = {
    */
   swapPosition: boolean;
 };
+
+/**
+ * Configuration for a single messaging platform connection
+ */
+export type MessagingPlatformConfig = {
+  /**
+   * Whether this platform connection is active
+   */
+  enabled: boolean;
+  /**
+   * Platform-specific chat ID for message routing (set during pairing)
+   */
+  chatId?: string;
+  /**
+   * Whether the chat has been verified via pairing code
+   */
+  paired: boolean;
+  /**
+   * One-time code shown to the user during pairing, cleared once confirmed
+   */
+  pendingPairingCode?: string;
+  /**
+   * Expiry timestamp for the pending pairing code (ISO-8601)
+   */
+  pendingPairingExpiresAt?: any;
+  /**
+   * Gateway integration route ID allocated during pairing
+   */
+  routeId?: string;
+  /**
+   * Gateway integration route token (path-auth) allocated during pairing
+   */
+  routeToken?: string;
+  /**
+   * Public webhook URL that the messaging platform should POST updates to
+   */
+  publicUrl?: string;
+  /**
+   * Bot API token used by the daemon to send outbound messages (Telegram: 123456:ABC...)
+   */
+  botToken?: string;
+};
+
+/**
+ * Messaging remote control configuration
+ */
+export type MessagingConfig = {
+  /**
+   * Whether messaging remote control is enabled
+   */
+  enabled: boolean;
+  /**
+   * URL of the Commands.com Gateway instance
+   */
+  gatewayUrl?: string;
+  /**
+   * Device ID used when registering integration routes and opening the tunnel
+   */
+  deviceId?: string;
+  /**
+   * OAuth client ID for fetching gateway access tokens (demo mode uses public client)
+   */
+  gatewayClientId?: string;
+  /**
+   * Telegram platform configuration
+   */
+  telegram?: MessagingPlatformConfig;
+  /**
+   * WhatsApp platform configuration
+   */
+  whatsapp?: MessagingPlatformConfig;
+  /**
+   * Debounce window in milliseconds for notification delivery (default: 5000)
+   */
+  debounceMs: number;
+  /**
+   * Buffer interval in milliseconds for chat relay output batching (default: 3000)
+   */
+  chatBufferMs: number;
+};
+export enum SecurityMode {
+  Disabled = 'Disabled',
+  Advisory = 'Advisory',
+  Enforce = 'Enforce',
+}
+
+/**
+ * Supply-chain security configuration persisted in settings
+ */
+export type SecurityConfig = {
+  /**
+   * Effective security mode (default: Advisory)
+   */
+  mode: SecurityMode;
+  /**
+   * ISO timestamp of last policy evaluation (null if never evaluated)
+   */
+  lastEvaluationAt?: string;
+  /**
+   * Source of the active security policy (null if never evaluated)
+   */
+  policySource?: string;
+};
 export enum DefaultHomePage {
   ControlCenter = 'control-center',
   Applications = 'applications',
@@ -874,6 +1009,14 @@ export type Settings = BaseEntity & {
    * WhatsApp integration configuration (optional, defaults applied at runtime)
    */
   whatsapp?: WhatsAppConfig;
+  /**
+   * Supply-chain security configuration (optional, defaults applied at runtime)
+   */
+  security?: SecurityConfig;
+  /**
+   * Messaging remote control configuration (optional, defaults applied at runtime)
+   */
+  messaging?: MessagingConfig;
 };
 export enum SupervisorScopeType {
   global = 'global',
@@ -1074,6 +1217,7 @@ export enum SdlcLifecycle {
   Maintain = 'Maintain',
   Blocked = 'Blocked',
   Pending = 'Pending',
+  Exploring = 'Exploring',
   Deleting = 'Deleting',
   AwaitingUpstream = 'AwaitingUpstream',
   Archived = 'Archived',
@@ -1082,6 +1226,7 @@ export enum BuildMode {
   Application = 'application',
   Fast = 'fast',
   Spec = 'spec',
+  Exploration = 'exploration',
 }
 
 /**
@@ -1101,6 +1246,7 @@ export type ApprovalGates = {
    */
   allowMerge: boolean;
 };
+export type integer = any;
 export enum PrStatus {
   Open = 'Open',
   Merged = 'Merged',
@@ -1330,6 +1476,18 @@ export type Feature = SoftDeletableEntity & {
    * Absolute path to the git worktree for this feature
    */
   worktreePath?: string;
+  /**
+   * Per-feature plugin activation overrides mapping plugin names to enabled state (JSON-serialized in DB)
+   */
+  activePlugins?: Record<string, boolean>;
+  /**
+   * Number of prototype iterations completed so far (incremented on each feedback loop)
+   */
+  iterationCount?: integer;
+  /**
+   * Maximum exploration feedback iterations (default: 10, 0 = unlimited)
+   */
+  maxIterations?: integer;
   /**
    * Pull request data (null until PR created)
    */
@@ -1970,6 +2128,9 @@ export enum NotificationEventType {
   AgentMessageBlocked = 'agent_message_blocked',
   SupervisorEscalated = 'supervisor_escalated',
   SupervisorFailed = 'supervisor_failed',
+  WorkflowStarted = 'workflow_started',
+  WorkflowCompleted = 'workflow_completed',
+  WorkflowFailed = 'workflow_failed',
 }
 export enum NotificationSeverity {
   Info = 'info',
@@ -2205,6 +2366,323 @@ export type Repository = SoftDeletableEntity & {
    * Whether project-bedrock memory integration is enabled for this repository (defaults to false in persistence)
    */
   bedrockEnabled?: boolean;
+};
+export enum SecurityActionCategory {
+  DependencyInstall = 'DependencyInstall',
+  PackageScriptExec = 'PackageScriptExec',
+  CiWorkflowModify = 'CiWorkflowModify',
+  PublishRelease = 'PublishRelease',
+  SandboxEscalation = 'SandboxEscalation',
+}
+export enum SecurityActionDisposition {
+  Allowed = 'Allowed',
+  Denied = 'Denied',
+  ApprovalRequired = 'ApprovalRequired',
+}
+
+/**
+ * Mapping of an action category to its enforcement disposition
+ */
+export type ActionDispositionEntry = {
+  /**
+   * The action category
+   */
+  category: SecurityActionCategory;
+  /**
+   * How this action should be handled
+   */
+  disposition: SecurityActionDisposition;
+};
+
+/**
+ * Dependency risk evaluation policy rules
+ */
+export type DependencyRules = {
+  /**
+   * Check manifest-lockfile consistency (default: true)
+   */
+  checkLockfileConsistency: boolean;
+  /**
+   * Flag packages with lifecycle scripts (default: true)
+   */
+  checkLifecycleScripts: boolean;
+  /**
+   * Flag non-registry dependency sources (default: true)
+   */
+  checkNonRegistrySource: boolean;
+  /**
+   * Enforce strict version ranges — no ^ or * (default: false)
+   */
+  enforceStrictVersionRanges: boolean;
+  /**
+   * Packages explicitly allowed (empty = allow all)
+   */
+  allowlist: string[];
+  /**
+   * Packages explicitly denied
+   */
+  denylist: string[];
+};
+
+/**
+ * Release integrity policy rules
+ */
+export type ReleaseRules = {
+  /**
+   * Require publishing from CI only, not local (default: true)
+   */
+  requireCiOnlyPublishing: boolean;
+  /**
+   * Require npm provenance flags on publish (default: true)
+   */
+  requireProvenance: boolean;
+  /**
+   * Check that release workflow has not been tampered with (default: true)
+   */
+  checkWorkflowIntegrity: boolean;
+};
+
+/**
+ * Security policy configuration from shep.security.yaml
+ */
+export type SupplyChainSecurityPolicy = {
+  /**
+   * Desired security mode for this repository
+   */
+  mode: SecurityMode;
+  /**
+   * Per-action-category enforcement dispositions
+   */
+  actionDispositions: ActionDispositionEntry[];
+  /**
+   * Dependency risk evaluation rules
+   */
+  dependencyRules: DependencyRules;
+  /**
+   * Release integrity check rules
+   */
+  releaseRules: ReleaseRules;
+};
+export enum SecuritySeverity {
+  Low = 'Low',
+  Medium = 'Medium',
+  High = 'High',
+  Critical = 'Critical',
+}
+
+/**
+ * Persisted security event for audit and observability
+ */
+export type SecurityEvent = BaseEntity & {
+  /**
+   * Absolute path to the repository this event belongs to
+   */
+  repositoryPath: string;
+  /**
+   * Feature ID if this event occurred during a feature run
+   */
+  featureId?: string;
+  /**
+   * Severity of this security event
+   */
+  severity: SecuritySeverity;
+  /**
+   * Action category that triggered this event
+   */
+  category: SecurityActionCategory;
+  /**
+   * How the action was handled (allowed, denied, approval-required)
+   */
+  disposition: SecurityActionDisposition;
+  /**
+   * Actor or source that triggered this event (agent, user, CI)
+   */
+  actor?: string;
+  /**
+   * Human-readable event description
+   */
+  message?: string;
+  /**
+   * Actionable remediation guidance
+   */
+  remediationSummary?: string;
+};
+export enum DependencyRiskType {
+  LockfileInconsistency = 'LockfileInconsistency',
+  NonRegistrySource = 'NonRegistrySource',
+  LifecycleScript = 'LifecycleScript',
+  DenylistViolation = 'DenylistViolation',
+  AllowlistViolation = 'AllowlistViolation',
+  VersionRangePolicy = 'VersionRangePolicy',
+}
+
+/**
+ * Single dependency risk finding
+ */
+export type DependencyFinding = {
+  /**
+   * Package name (e.g. 'lodash', '@types/node')
+   */
+  packageName: string;
+  /**
+   * Package version or range (e.g. '^4.17.0')
+   */
+  version?: string;
+  /**
+   * Severity of this finding
+   */
+  severity: SecuritySeverity;
+  /**
+   * Type of dependency risk detected
+   */
+  riskType: DependencyRiskType;
+  /**
+   * Human-readable description of the finding
+   */
+  message: string;
+  /**
+   * Actionable remediation guidance
+   */
+  remediation?: string;
+};
+export enum ReleaseIntegrityCheckType {
+  CiOnlyPublishing = 'CiOnlyPublishing',
+  SecretConfiguration = 'SecretConfiguration',
+  ProvenanceConfiguration = 'ProvenanceConfiguration',
+  WorkflowIntegrity = 'WorkflowIntegrity',
+}
+
+/**
+ * Result of a single release integrity check
+ */
+export type ReleaseIntegrityCheck = {
+  /**
+   * Type of check performed
+   */
+  checkType: ReleaseIntegrityCheckType;
+  /**
+   * Whether this check passed
+   */
+  passed: boolean;
+  /**
+   * Human-readable description of the result
+   */
+  message: string;
+  /**
+   * Severity when this check fails
+   */
+  severity: SecuritySeverity;
+};
+
+/**
+ * Aggregated release integrity evaluation result
+ */
+export type ReleaseIntegrityResult = {
+  /**
+   * Individual check results
+   */
+  checks: ReleaseIntegrityCheck[];
+  /**
+   * Whether all checks passed
+   */
+  passed: boolean;
+};
+
+/**
+ * Computed effective security policy snapshot
+ */
+export type EffectivePolicySnapshot = {
+  /**
+   * Resolved effective security mode
+   */
+  mode: SecurityMode;
+  /**
+   * Where the policy was sourced from (e.g. 'shep.security.yaml', 'settings-default')
+   */
+  source: string;
+  /**
+   * ISO timestamp when this snapshot was computed
+   */
+  evaluatedAt: string;
+  /**
+   * Resolved per-action-category enforcement dispositions
+   */
+  actionDispositions: ActionDispositionEntry[];
+};
+export enum MessagingFrameType {
+  Command = 'command',
+  ChatMessage = 'chat_message',
+  ChatControl = 'chat_control',
+}
+export enum MessagingCommandType {
+  New = 'new',
+  Approve = 'approve',
+  Reject = 'reject',
+  Stop = 'stop',
+  Resume = 'resume',
+  Status = 'status',
+  Mute = 'mute',
+  Unmute = 'unmute',
+  List = 'list',
+  Chat = 'chat',
+  End = 'end',
+  Help = 'help',
+}
+export enum MessagingPlatform {
+  Telegram = 'telegram',
+  WhatsApp = 'whatsapp',
+}
+
+/**
+ * A parsed command received from a messaging platform via the Gateway tunnel
+ */
+export type MessagingCommand = {
+  /**
+   * Type of frame: command, chat_message, or chat_control
+   */
+  type: MessagingFrameType;
+  /**
+   * The slash command name (new, approve, reject, stop, resume, status)
+   */
+  command: MessagingCommandType;
+  /**
+   * Target feature ID (short numeric or full UUID)
+   */
+  featureId?: string;
+  /**
+   * Free-text arguments (feature description, rejection feedback, chat text)
+   */
+  args?: string;
+  /**
+   * Chat ID for routing responses back to the correct conversation
+   */
+  chatId: string;
+  /**
+   * Platform for routing responses back (telegram or whatsapp)
+   */
+  platform: MessagingPlatform;
+};
+
+/**
+ * A notification or response sent from Shep to a messaging platform via the Gateway tunnel
+ */
+export type MessagingNotification = {
+  /**
+   * Event type: feature lifecycle, CI status, gate waiting, command response, chat response
+   */
+  event: string;
+  /**
+   * ID of the feature this notification relates to
+   */
+  featureId: string;
+  /**
+   * Human-readable feature name or title
+   */
+  title: string;
+  /**
+   * Human-readable notification body (sanitized, no code or secrets)
+   */
+  message: string;
 };
 export enum EstimateType {
   None = 'None',
@@ -3881,6 +4359,314 @@ export type ScanRun = BaseEntity & {
    */
   findingsCount: number;
 };
+export enum ClusterStatus {
+  Provisioning = 'Provisioning',
+  Ready = 'Ready',
+  Stopping = 'Stopping',
+  Stopped = 'Stopped',
+  Error = 'Error',
+  Destroying = 'Destroying',
+}
+
+/**
+ * A managed Kubernetes cluster provisioned via k3s-in-Docker
+ */
+export type Cluster = SoftDeletableEntity & {
+  /**
+   * Human-readable cluster name
+   */
+  name: string;
+  /**
+   * URL-friendly identifier (unique among non-deleted clusters)
+   */
+  slug: string;
+  /**
+   * Optional description of the cluster's purpose
+   */
+  description?: string;
+  /**
+   * Current operational status of the cluster
+   */
+  status: ClusterStatus;
+  /**
+   * The k3d-internal cluster name (set during provisioning)
+   */
+  k3dClusterName?: string;
+  /**
+   * Absolute path to the kubeconfig file
+   */
+  kubeconfigPath?: string;
+  /**
+   * Whether ArgoCD is enabled for this cluster
+   */
+  argoCdEnabled: boolean;
+  /**
+   * Kubernetes namespace where ArgoCD is installed
+   */
+  argoCdNamespace: string;
+  /**
+   * Number of k3s nodes (default 1, reserved for future multi-node support)
+   */
+  nodeCount: number;
+  /**
+   * Timestamp when the cluster was last successfully provisioned
+   */
+  lastProvisionedAt?: any;
+  /**
+   * Timestamp of the most recent health check
+   */
+  lastHealthCheckAt?: any;
+  /**
+   * Error message from the last failed operation (set when status = Error)
+   */
+  errorMessage?: string;
+};
+
+/**
+ * Junction entity linking Clusters to Repositories (many-to-many)
+ */
+export type ClusterRepository = BaseEntity & {
+  /**
+   * The cluster ID
+   */
+  clusterId: UUID;
+  /**
+   * The repository ID
+   */
+  repositoryId: UUID;
+};
+
+/**
+ * Junction entity linking Clusters to Applications (many-to-many)
+ */
+export type ClusterApplication = BaseEntity & {
+  /**
+   * The cluster ID
+   */
+  clusterId: UUID;
+  /**
+   * The application ID
+   */
+  applicationId: UUID;
+};
+
+/**
+ * User-defined reusable automation that runs on demand or on a cron schedule
+ */
+export type ScheduledWorkflow = SoftDeletableEntity & {
+  /**
+   * Unique human-readable name identifying this workflow within the repository
+   */
+  name: string;
+  /**
+   * Optional human-readable description of what this workflow does
+   */
+  description?: string;
+  /**
+   * Agent prompt instruction that the AI agent will execute when the workflow runs
+   */
+  prompt: string;
+  /**
+   * Optional allowlist of tool names the workflow agent is permitted to use
+   */
+  toolConstraints?: string[];
+  /**
+   * Cron expression defining the schedule (5-field format: min hour dom month dow)
+   */
+  cronExpression?: string;
+  /**
+   * IANA timezone for cron evaluation (e.g. America/New_York). Defaults to UTC
+   */
+  timezone?: string;
+  /**
+   * Whether the workflow schedule is active. Disabled workflows retain their cron expression but do not auto-execute
+   */
+  enabled: boolean;
+  /**
+   * Timestamp of the most recent execution (manual or scheduled)
+   */
+  lastRunAt?: any;
+  /**
+   * Calculated timestamp of the next scheduled execution based on cron expression
+   */
+  nextRunAt?: any;
+  /**
+   * Absolute file system path to the repository this workflow operates on
+   */
+  repositoryPath: string;
+};
+export enum WorkflowTriggerType {
+  Manual = 'manual',
+  Scheduled = 'scheduled',
+}
+export enum WorkflowExecutionStatus {
+  Queued = 'queued',
+  Running = 'running',
+  Completed = 'completed',
+  Failed = 'failed',
+  Cancelled = 'cancelled',
+}
+
+/**
+ * A single execution record for a scheduled workflow run
+ */
+export type WorkflowExecution = BaseEntity & {
+  /**
+   * ID of the ScheduledWorkflow that was executed
+   */
+  workflowId: UUID;
+  /**
+   * How this execution was triggered (manual or scheduled)
+   */
+  triggerType: WorkflowTriggerType;
+  /**
+   * Current lifecycle status of this execution
+   */
+  status: WorkflowExecutionStatus;
+  /**
+   * Timestamp when the execution started running
+   */
+  startedAt: any;
+  /**
+   * Timestamp when the execution completed or failed (null if still running)
+   */
+  completedAt?: any;
+  /**
+   * Duration of the execution in milliseconds (null if still running)
+   */
+  durationMs?: integer;
+  /**
+   * Summary of the execution output (truncated if too long)
+   */
+  outputSummary?: string;
+  /**
+   * Error message if the execution failed
+   */
+  errorMessage?: string;
+};
+
+/**
+ * Logical grouping of MCP tools within a plugin for selective activation
+ */
+export type ToolGroup = {
+  /**
+   * Group identifier used for activation and filtering
+   */
+  name: string;
+  /**
+   * Human-readable description of what this tool group provides
+   */
+  description?: string;
+  /**
+   * List of individual tool names belonging to this group
+   */
+  tools?: string[];
+};
+export enum PluginType {
+  Mcp = 'Mcp',
+  Hook = 'Hook',
+  Cli = 'Cli',
+}
+export enum PluginTransport {
+  Stdio = 'Stdio',
+  Http = 'Http',
+}
+export enum PluginHealthStatus {
+  Healthy = 'Healthy',
+  Degraded = 'Degraded',
+  Unavailable = 'Unavailable',
+  Unknown = 'Unknown',
+}
+
+/**
+ * External AI-native tool registered in Shep's plugin system
+ */
+export type Plugin = BaseEntity & {
+  /**
+   * Unique plugin name used as identifier (e.g., 'mempalace', 'ruflo')
+   */
+  name: string;
+  /**
+   * Human-readable display name for UI presentation
+   */
+  displayName: string;
+  /**
+   * Integration type determining how the plugin connects to Shep workflows
+   */
+  type: PluginType;
+  /**
+   * Installed version of the plugin package
+   */
+  version?: string;
+  /**
+   * Installation source: 'catalog' for curated plugins, 'custom' for user-added
+   */
+  installSource?: string;
+  /**
+   * MCP transport protocol (only for Mcp type plugins)
+   */
+  transport?: PluginTransport;
+  /**
+   * Command to start the MCP server process (only for Mcp type plugins)
+   */
+  serverCommand?: string;
+  /**
+   * Arguments passed to the MCP server command (only for Mcp type plugins)
+   */
+  serverArgs?: string[];
+  /**
+   * Environment variable names required by this plugin (names only, never values)
+   */
+  requiredEnvVars?: string[];
+  /**
+   * Available tool groups defined by this plugin for selective activation
+   */
+  toolGroups?: ToolGroup[];
+  /**
+   * Names of currently enabled tool groups from the available set
+   */
+  activeToolGroups?: string[];
+  /**
+   * Whether this plugin is globally enabled for use in features
+   */
+  enabled: boolean;
+  /**
+   * Current operational health status based on multi-tier health checks
+   */
+  healthStatus: PluginHealthStatus;
+  /**
+   * Human-readable details from the most recent health check
+   */
+  healthMessage?: string;
+  /**
+   * Hook event type for lifecycle integration (only for Hook type plugins)
+   */
+  hookType?: string;
+  /**
+   * Path to the hook script file (only for Hook type plugins)
+   */
+  scriptPath?: string;
+  /**
+   * Executable command for CLI tool invocation (only for Cli type plugins)
+   */
+  binaryCommand?: string;
+  /**
+   * Required runtime environment: 'python' or 'node'
+   */
+  runtimeType?: string;
+  /**
+   * Minimum required version of the runtime (e.g., '3.9' for Python, '20' for Node.js)
+   */
+  runtimeMinVersion?: string;
+  /**
+   * Plugin homepage or repository URL for reference
+   */
+  homepageUrl?: string;
+  /**
+   * Brief description of what this plugin provides
+   */
+  description?: string;
+};
 
 /**
  * Single installation suggestion for a tool
@@ -5380,3 +6166,5 @@ export type LocalDeployAgentOperations = {
   Analyze(repositoryPath: string): DeploySkill;
   Ask(query: string): AskResponse;
 };
+
+export namespace TypeSpec {}

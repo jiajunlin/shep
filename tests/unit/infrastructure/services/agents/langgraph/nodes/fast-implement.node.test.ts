@@ -9,6 +9,7 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { IAgentExecutor } from '@/application/ports/output/agents/agent-executor.interface.js';
+import { SecurityMode } from '@/domain/generated/output.js';
 import type { AgentType } from '@/domain/generated/output.js';
 import type { FeatureAgentState } from '@/infrastructure/services/agents/feature-agent/state.js';
 
@@ -161,6 +162,13 @@ function createMockState(overrides?: Partial<FeatureAgentState>): FeatureAgentSt
     ciWatchEnabled: true,
     enableEvidence: true,
     commitEvidence: false,
+    securityMode: SecurityMode.Disabled,
+    securityActionDispositions: {},
+    mcpConfigPath: undefined,
+    iterationCount: 0,
+    maxIterations: 10,
+    feedbackHistory: [],
+    explorationStatus: undefined,
     ...overrides,
   };
 }

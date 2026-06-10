@@ -55,6 +55,14 @@ import { PublishMonthlyRecapUseCase } from '@/application/use-cases/contributors
 import type { IRepositoryRepository } from '@/application/ports/output/repositories/repository-repository.interface.js';
 import type { IGitHubRepositoryService } from '@/application/ports/output/services/github-repository-service.interface.js';
 import type { IDesktopNotifier } from '@/application/ports/output/services/i-desktop-notifier.js';
+import type { IMessagingService } from '@/application/ports/output/services/messaging-service.interface.js';
+import type { ITunnelService } from '@/application/ports/output/services/tunnel-service.interface.js';
+import type { IWebhookService as IGitHubWebhookServiceType } from '@/application/ports/output/services/webhook-service.interface.js';
+import {
+  initializeWebhookManager,
+  getWebhookManager,
+  hasWebhookManager,
+} from '@/infrastructure/services/webhook/webhook-manager.service.js';
 
 const DEFAULT_PORT = 3000;
 
@@ -187,6 +195,38 @@ async function main() {
       publish: container.resolve(PublishMonthlyRecapUseCase),
     });
     getMonthlyRecapWatcher().start();
+
+    // Optionally start the messaging remote-control service.
+    // Dev mode skips this by default because it opens a persistent
+    // WebSocket tunnel to the gateway and is not something every
+    // developer wants running on every `pnpm dev:web` invocation.
+    // Opt in with SHEP_ENABLE_MESSAGING=1.
+    if (process.env.SHEP_ENABLE_MESSAGING === '1') {
+      try {
+        const messagingService = container.resolve<IMessagingService>('IMessagingService');
+        if (messagingService.isConfigured()) {
+          await messagingService.start();
+          console.log('[dev-server] messaging remote control started');
+        } else {
+          console.log(
+            '[dev-server] SHEP_ENABLE_MESSAGING=1 but messaging is not configured yet — pair a platform in Settings first'
+          );
+        }
+      } catch (err) {
+        console.warn('[dev-server] failed to start messaging service:', err);
+      }
+    }
+
+    // Start webhook system (optional — falls back to polling if cloudflared is not installed)
+    try {
+      const tunnelService = container.resolve<ITunnelService>('ITunnelService');
+      const webhookService = container.resolve<IGitHubWebhookServiceType>('IGitHubWebhookService');
+      initializeWebhookManager(tunnelService, webhookService);
+      // Start is async and non-blocking — failures are logged, not thrown
+      void getWebhookManager().start(port);
+    } catch (error) {
+      console.warn('[dev-server] Webhook system init failed (using polling fallback):', error);
+    }
   } catch (error) {
     console.warn('[dev-server] DI initialization failed — features will be empty:', error);
   }
@@ -243,6 +283,13 @@ async function main() {
         /* not initialized */
       }
       try {
+        if (hasWebhookManager()) {
+          await getWebhookManager().stop();
+        }
+      } catch {
+        /* not initialized */
+      }
+      try {
         getNotificationWatcher().stop();
       } catch {
         /* not initialized */
@@ -266,6 +313,12 @@ async function main() {
         getMonthlyRecapWatcher().stop();
       } catch {
         /* not initialized */
+      }
+      try {
+        const messagingService = container.resolve<IMessagingService>('IMessagingService');
+        await messagingService.stop();
+      } catch {
+        /* not initialized or not running */
       }
       server.closeAllConnections();
       await Promise.all([

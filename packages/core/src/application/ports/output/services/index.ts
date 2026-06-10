@@ -38,6 +38,7 @@ export type {
   LaunchIdeSuccess,
   LaunchIdeFailed,
 } from './ide-launcher-service.interface.js';
+export type { IClock } from './clock.interface.js';
 export type { IDaemonService, DaemonState } from './daemon-service.interface.js';
 export type { IDeploymentService, DeploymentStatus } from './deployment-service.interface.js';
 export type {
@@ -107,3 +108,16 @@ export type {
 export { WHATSAPP_GATEWAY_TOKEN } from './whatsapp-gateway.interface.js';
 export type { IWhatsAppNotifier } from './whatsapp-notifier.interface.js';
 export { WHATSAPP_NOTIFIER_TOKEN } from './whatsapp-notifier.interface.js';
+export type { IMcpServerManager, ActiveMcpServer } from './mcp-server-manager.interface.js';
+export type {
+  IPluginHealthChecker,
+  PluginHealthResult,
+} from './plugin-health-checker.interface.js';
+
+export type { IPluginCatalog, CatalogEntry } from './plugin-catalog.interface.js';
+export type { ITunnelService, TunnelUrlChangeHandler } from './tunnel-service.interface.js';
+export type {
+  IWebhookService,
+  WebhookEvent,
+  WebhookValidationResult,
+} from './webhook-service.interface.js';

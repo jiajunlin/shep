@@ -100,6 +100,9 @@ function WithGitOpsTemplate({ data }: { data: RepositoryNodeData }) {
     bedrockIntegration: false,
     whatsappDispatch: false,
     aspm: false,
+    clusters: false,
+    scheduledWorkflows: true,
+    githubImport: true,
   };
 
   return (
@@ -121,4 +124,8 @@ function WithGitOpsTemplate({ data }: { data: RepositoryNodeData }) {
 /** Repository drawer with git operations section visible. */
 export const WithGitOperations: Story = {
   render: () => <WithGitOpsTemplate data={repoData} />,
+};
+
+export const WithWebhookSection: Story = {
+  render: () => <RepositoryDrawerShellTemplate data={repoData} />,
 };

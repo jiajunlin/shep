@@ -19,6 +19,8 @@ import { createFeatureAgentGraph } from './feature-agent-graph.js';
 import type { FeatureAgentGraphDeps } from './feature-agent-graph.js';
 import { createFastFeatureAgentGraph } from './fast-feature-agent-graph.js';
 import type { FastFeatureAgentGraphDeps } from './fast-feature-agent-graph.js';
+import { createExplorationAgentGraph } from './exploration-agent-graph.js';
+import type { ExplorationAgentGraphDeps } from './exploration-agent-graph.js';
 import { createCheckpointer } from '../common/checkpointer.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IAgentExecutorProvider } from '@/application/ports/output/agents/agent-executor-provider.interface.js';
@@ -26,7 +28,14 @@ import type { IAgentExecutorFactory } from '@/application/ports/output/agents/ag
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import type { IGitForkService } from '@/application/ports/output/services/git-fork-service.interface.js';
-import { AgentRunStatus, SdlcLifecycle, type AgentType } from '@/domain/generated/output.js';
+import {
+  AgentRunStatus,
+  SdlcLifecycle,
+  SecurityMode,
+  type AgentType,
+  type SecurityActionCategory,
+  type SecurityActionDisposition,
+} from '@/domain/generated/output.js';
 import { initializeSettings } from '@/infrastructure/services/settings.service.js';
 import { InitializeSettingsUseCase } from '@/application/use-cases/settings/initialize-settings.use-case.js';
 import { setHeartbeatContext } from './heartbeat.js';
@@ -39,8 +48,11 @@ import { FeatureAgentLifecyclePublisher } from './feature-agent-lifecycle-publis
 import { FeatureAgentGateQuestionPublisher } from './feature-agent-gate-question-publisher.js';
 import { FeatureAgentSupervisorGateEvaluator } from './feature-agent-supervisor-gate-evaluator.js';
 import type { IPhaseTimingRepository } from '@/application/ports/output/agents/phase-timing-repository.interface.js';
+import type { IPluginRepository } from '@/application/ports/output/repositories/plugin-repository.interface.js';
+import type { IMcpServerManager } from '@/application/ports/output/services/mcp-server-manager.interface.js';
 import { UpdateFeatureLifecycleUseCase } from '@/application/use-cases/features/update/update-feature-lifecycle.use-case.js';
 import { CleanupFeatureWorktreeUseCase } from '@/application/use-cases/features/cleanup-feature-worktree.use-case.js';
+import { startPluginServers, stopPluginServers } from './plugin-startup.js';
 import { SelectProjectMemoryUseCase } from '@/application/use-cases/project-memory/select-project-memory.use-case.js';
 import { RecordProjectMemoryUseCase } from '@/application/use-cases/project-memory/record-project-memory.use-case.js';
 
@@ -66,8 +78,11 @@ export interface WorkerArgs {
   resumePayload?: string;
   agentType?: AgentType;
   fast?: boolean;
+  exploration?: boolean;
   model?: string;
   resumeReason?: string;
+  securityMode?: SecurityMode;
+  securityActionDispositions?: Partial<Record<SecurityActionCategory, SecurityActionDisposition>>;
 }
 
 /**
@@ -108,6 +123,7 @@ export function parseWorkerArgs(args: string[]): WorkerArgs {
   const enableEvidence = args.includes('--enable-evidence');
   const commitEvidence = args.includes('--commit-evidence');
   const fast = args.includes('--fast');
+  const exploration = args.includes('--explore');
   const threadIdx = args.indexOf('--thread-id');
   const threadId =
     threadIdx !== -1 && threadIdx + 1 < args.length ? args[threadIdx + 1] : undefined;
@@ -133,6 +149,30 @@ export function parseWorkerArgs(args: string[]): WorkerArgs {
       ? args[resumeReasonIdx + 1]
       : undefined;
 
+  const securityModeIdx = args.indexOf('--security-mode');
+  const securityModeRaw =
+    securityModeIdx !== -1 && securityModeIdx + 1 < args.length
+      ? args[securityModeIdx + 1]
+      : undefined;
+  const securityMode =
+    securityModeRaw && Object.values(SecurityMode).includes(securityModeRaw as SecurityMode)
+      ? (securityModeRaw as SecurityMode)
+      : undefined;
+
+  const securityDispositionsIdx = args.indexOf('--security-dispositions');
+  let securityActionDispositions:
+    | Partial<Record<SecurityActionCategory, SecurityActionDisposition>>
+    | undefined;
+  if (securityDispositionsIdx !== -1 && securityDispositionsIdx + 1 < args.length) {
+    try {
+      securityActionDispositions = JSON.parse(args[securityDispositionsIdx + 1]) as Partial<
+        Record<SecurityActionCategory, SecurityActionDisposition>
+      >;
+    } catch {
+      securityActionDispositions = undefined;
+    }
+  }
+
   return {
     featureId: getArg('feature-id'),
     runId: getArg('run-id'),
@@ -153,8 +193,11 @@ export function parseWorkerArgs(args: string[]): WorkerArgs {
     resumePayload,
     agentType,
     fast,
+    exploration,
     model,
     resumeReason,
+    securityMode,
+    securityActionDispositions,
   };
 }
 
@@ -220,7 +263,12 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     ...(args.resumePayload ? ['--resume-payload', args.resumePayload] : []),
     ...(args.agentType ? ['--agent-type', args.agentType] : []),
     ...(args.fast ? ['--fast'] : []),
+    ...(args.exploration ? ['--explore'] : []),
     ...(args.model ? ['--model', args.model] : []),
+    ...(args.securityMode ? ['--security-mode', args.securityMode] : []),
+    ...(args.securityActionDispositions
+      ? ['--security-dispositions', JSON.stringify(args.securityActionDispositions)]
+      : []),
   ];
   log(`Starting worker — full command:`);
   log(`  ${cmdParts.join(' ')}`);
@@ -247,6 +295,10 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     log('Creating executor from configured agent settings...');
     executor = await executorProvider.getExecutor();
   }
+
+  // Resolve plugin dependencies for MCP server lifecycle
+  const pluginRepository = container.resolve<IPluginRepository>('IPluginRepository');
+  const mcpServerManager = container.resolve<IMcpServerManager>('IMcpServerManager');
 
   // Resolve merge node dependencies
   const gitPrService = container.resolve<IGitPrService>('IGitPrService');
@@ -302,15 +354,23 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
   const checkpointPath = join(homedir(), '.shep', 'checkpoints', `${checkpointId}.db`);
   log(`Creating checkpointer at ${checkpointPath} (thread: ${checkpointId})`);
   const checkpointer = createCheckpointer(checkpointPath);
-  // Both graph factories return compiled graphs with identical FeatureAgentAnnotation
+  // All graph factories return compiled graphs with identical FeatureAgentAnnotation
   // state shape and invoke() interface. Cast through unknown because the compiled
   // graphs have different node name types but share the same runtime contract.
-  const graph = args.fast
-    ? (createFastFeatureAgentGraph(
-        graphDeps as FastFeatureAgentGraphDeps,
-        checkpointer
-      ) as unknown as ReturnType<typeof createFeatureAgentGraph>)
-    : createFeatureAgentGraph(graphDeps, checkpointer);
+  let graph: ReturnType<typeof createFeatureAgentGraph>;
+  if (args.exploration) {
+    graph = createExplorationAgentGraph(
+      { executor } as ExplorationAgentGraphDeps,
+      checkpointer
+    ) as unknown as ReturnType<typeof createFeatureAgentGraph>;
+  } else if (args.fast) {
+    graph = createFastFeatureAgentGraph(
+      graphDeps as FastFeatureAgentGraphDeps,
+      checkpointer
+    ) as unknown as ReturnType<typeof createFeatureAgentGraph>;
+  } else {
+    graph = createFeatureAgentGraph(graphDeps, checkpointer);
+  }
 
   // Mark the run as running with our PID
   const now = new Date();
@@ -371,6 +431,14 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     repositoryPath: args.repo,
   };
   await lifecyclePublisher.publishStarted(lifecycleScope);
+
+  // Start MCP servers for enabled plugins (degrades gracefully on failure)
+  const mcpConfigPath = await startPluginServers(
+    args.featureId,
+    pluginRepository,
+    mcpServerManager,
+    log
+  );
 
   try {
     const graphConfig = { configurable: { thread_id: checkpointId } };
@@ -450,6 +518,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
           ...(args.approvalGates ? { approvalGates: args.approvalGates } : {}),
           ...(args.model ? { model: args.model } : {}),
           ...(args.resumeReason ? { resumeReason: args.resumeReason } : {}),
+          ...(mcpConfigPath ? { mcpConfigPath } : {}),
           push: args.push ?? false,
           openPr: args.openPr ?? false,
           forkAndPr: args.forkAndPr ?? false,
@@ -457,6 +526,10 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
           ciWatchEnabled: args.ciWatchEnabled ?? true,
           enableEvidence: args.enableEvidence ?? false,
           commitEvidence: args.commitEvidence ?? false,
+          ...(args.securityMode ? { securityMode: args.securityMode } : {}),
+          ...(args.securityActionDispositions
+            ? { securityActionDispositions: args.securityActionDispositions }
+            : {}),
         },
         graphConfig
       );
@@ -474,6 +547,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
           specDir: args.specDir,
           ...(args.approvalGates ? { approvalGates: args.approvalGates } : {}),
           ...(args.model ? { model: args.model } : {}),
+          ...(mcpConfigPath ? { mcpConfigPath } : {}),
           push: args.push ?? false,
           openPr: args.openPr ?? false,
           forkAndPr: args.forkAndPr ?? false,
@@ -481,6 +555,10 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
           ciWatchEnabled: args.ciWatchEnabled ?? true,
           enableEvidence: args.enableEvidence ?? false,
           commitEvidence: args.commitEvidence ?? false,
+          ...(args.securityMode ? { securityMode: args.securityMode } : {}),
+          ...(args.securityActionDispositions
+            ? { securityActionDispositions: args.securityActionDispositions }
+            : {}),
         },
         graphConfig
       );
@@ -584,6 +662,9 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
 
     await recordLifecycleEvent('run:failed');
     log('Run marked as failed');
+  } finally {
+    // Stop MCP plugin servers regardless of success/failure/interrupt
+    await stopPluginServers(args.featureId, mcpServerManager, log);
   }
 }
 

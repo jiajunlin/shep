@@ -133,6 +133,34 @@ export interface CloneOptions {
 }
 
 /**
+ * Result of checking push access to a repository.
+ */
+export interface PushAccessResult {
+  /** Whether the authenticated user has push (write) access */
+  hasPushAccess: boolean;
+  /** The authenticated user's GitHub login (e.g. "octocat") */
+  viewerLogin: string;
+}
+
+/**
+ * Result of forking a repository.
+ */
+export interface ForkResult {
+  /** The fork's nameWithOwner (e.g. "myuser/their-project") */
+  nameWithOwner: string;
+  /** Whether the fork already existed before this call */
+  alreadyExisted: boolean;
+}
+
+/**
+ * Options for forking a repository.
+ */
+export interface ForkOptions {
+  /** Callback for progress display during fork operation */
+  onProgress?: (message: string) => void;
+}
+
+/**
  * Result of parsing a GitHub URL.
  */
 export interface ParsedGitHubUrl {
@@ -145,26 +173,27 @@ export interface ParsedGitHubUrl {
 }
 
 /**
- * Options for forking a repository.
+ * Category of a governance audit finding.
  */
-export interface ForkOptions {
-  onProgress?: (message: string) => void;
+export enum GovernanceFindingCategory {
+  BranchProtection = 'BranchProtection',
+  Codeowners = 'Codeowners',
+  WorkflowPermissions = 'WorkflowPermissions',
 }
 
 /**
- * Result of checking push access on a repository.
+ * A single finding from a GitHub governance audit.
+ * Findings are advisory-only — Shep reports gaps but does not mutate remote settings.
  */
-export interface PushAccessResult {
-  hasPushAccess: boolean;
-  viewerLogin: string;
-}
-
-/**
- * Result of forking a repository.
- */
-export interface ForkResult {
-  nameWithOwner: string;
-  alreadyExisted: boolean;
+export interface GovernanceFinding {
+  /** Category of the governance check */
+  category: GovernanceFindingCategory;
+  /** Severity of the finding */
+  severity: 'Low' | 'Medium' | 'High' | 'Critical' | 'Unknown';
+  /** Human-readable description of the finding */
+  message: string;
+  /** Actionable remediation guidance */
+  remediation: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -267,4 +296,25 @@ export interface IGitHubRepositoryService {
    * @throws {GitHubForkError} on failure
    */
   forkRepository(nameWithOwner: string, options?: ForkOptions): Promise<ForkResult>;
+
+  /**
+   * Audit repository governance settings via the gh CLI.
+   *
+   * Checks branch protection rules, CODEOWNERS presence, and workflow
+   * permissions. Returns findings with severity and remediation suggestions.
+   * This is audit-only — no remote settings are mutated.
+   *
+   * Handles auth/permission errors gracefully by returning an Unknown-severity
+   * finding instead of throwing.
+   *
+   * @param owner - Repository owner (e.g. "octocat")
+   * @param repo - Repository name (e.g. "my-project")
+   * @param defaultBranch - Branch to check protection for (default: "main")
+   * @returns Array of governance findings (empty if all checks pass)
+   */
+  auditRepositoryGovernance(
+    owner: string,
+    repo: string,
+    defaultBranch?: string
+  ): Promise<GovernanceFinding[]>;
 }
