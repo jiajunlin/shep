@@ -4,6 +4,45 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.212.0](/compare/v1.211.0...v1.212.0) · _2026-06-10_
+
+> _Under the hood_ housekeeping keeps the gears turning — no new features, just a cleaner foundation for what's next.
+
+
+
+### ✨ Features
+
+* combine 17 open PRs (cluster, supply-chain, workflows, plugins, messaging, mcp, exploration + more) onto current main ([#740](https://github.com/shep-ai/shep/issues/740)) ([358ae42](https://github.com/shep-ai/shep/commit/358ae4287e9449724125f1cff28708ba1749d784)), closes [#566](https://github.com/shep-ai/shep/issues/566) [#527](https://github.com/shep-ai/shep/issues/527) [#441](https://github.com/shep-ai/shep/issues/441) [#555](https://github.com/shep-ai/shep/issues/555) [#512](https://github.com/shep-ai/shep/issues/512) [#513](https://github.com/shep-ai/shep/issues/513) [#469](https://github.com/shep-ai/shep/issues/469) [#367](https://github.com/shep-ai/shep/issues/367) [#538](https://github.com/shep-ai/shep/issues/538) [#430](https://github.com/shep-ai/shep/issues/430) [#434](https://github.com/shep-ai/shep/issues/434) [#417](https://github.com/shep-ai/shep/issues/417) [#384](https://github.com/shep-ai/shep/issues/384) [#470](https://github.com/shep-ai/shep/issues/470) [#443](https://github.com/shep-ai/shep/issues/443) [#409](https://github.com/shep-ai/shep/issues/409) [#399](https://github.com/shep-ai/shep/issues/399)
+
+  ![Settings flags](https://raw.githubusercontent.com/shep-ai/cli/feat/cluster-agent/specs/090-cluster-agent/evidence/app-settings-flags-tab-clusters.png)
+  ![Status badges](https://raw.githubusercontent.com/shep-ai/cli/feat/cluster-agent/specs/090-cluster-agent/evidence/storybook-cluster-status-badge-all.png)
+  ![Canvas](https://raw.githubusercontent.com/shep-ai/cli/feat/cluster-agent/specs/090-cluster-agent/evidence/app-dashboard-control-center.png)
+  ![Settings Security Tab](https://raw.githubusercontent.com/shep-ai/cli/feat/supply-chain-security/specs/083-supply-chain-security/evidence/app-settings-security-section.png)
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.212.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.211.0](/compare/v1.210.0...v1.211.0) · _2026-06-09_
 
 > You've hit your limit · resets 8:30pm (UTC)
