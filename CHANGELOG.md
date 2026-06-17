@@ -4,6 +4,41 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.214.0](/compare/v1.213.0...v1.214.0) · _2026-06-17_
+
+> _Housekeeping only_ — no user-facing changes, just internal maintenance keeping the engine clean.
+
+
+
+### ✨ Features
+
+* **agents:** add Z.ai GLM-5.2 and GLM-5.1 to model catalog ([#757](https://github.com/shep-ai/shep/issues/757)) ([4255b33](https://github.com/shep-ai/shep/commit/4255b337de1e54d63888eb5fc464311900aede3b)), closes [#751](https://github.com/shep-ai/shep/issues/751) [#720](https://github.com/shep-ai/shep/issues/720) [#739](https://github.com/shep-ai/shep/issues/739) [#743](https://github.com/shep-ai/shep/issues/743)
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.214.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.213.0](/compare/v1.212.0...v1.213.0) · _2026-06-13_
 
 > _Under the hood_ housekeeping keeps the gears turning — no new features, just a cleaner foundation.
